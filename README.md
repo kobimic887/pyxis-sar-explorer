@@ -133,6 +133,10 @@ partial equivalents and verification limits.
   Limits: 100 groups per axis, 2,500 cells, 25 million pixels per PNG.
 
 
+### Showing it to someone
+`pyxis/DEMO.md` is a five-minute walk through the SAR menu with the two SD-files that
+came with the training text, including the numbers this program gives for them.
+
 ### Pictures for a presentation
 `pyxis/demo/make-gallery.sh project.dwar output-directory value-column` runs the workflow
 on one project in the real application and saves pictures of the scaffold tree, R-group
@@ -178,6 +182,10 @@ macros, document fixtures, CSVs, window-query evidence, and runtime architecture
 The `application-jar` artifact includes an in-process rendering of the actual About
 panel. A `pyxis-v1.2.3` tag can publish installers as a GitHub release; ordinary
 branch pushes only create workflow artifacts.
+Release files carry no version in their names (`Pyxis-SAR-Explorer-windows-x64.msi`,
+`-macos-arm64.dmg`, `-macos-x64.dmg`, `-linux-x64.deb`), so
+`https://github.com/<owner>/<repo>/releases/latest/download/<name>` is a permanent link
+to the newest installer. No release has been published yet.
 
 ### Checking a change
 ```

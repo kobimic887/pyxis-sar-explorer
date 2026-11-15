@@ -221,6 +221,7 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           pattern: installer-*
@@ -230,7 +231,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" installers/* \
+          # Release files get names without a version, so that
+          # https://github.com/<owner>/<repo>/releases/latest/download/<name> always
+          # points at the newest installer and a web page can link to it permanently.
+          sh pyxis/stable-installer-names.sh installers stable
+          ls -l stable
+          gh release create "$GITHUB_REF_NAME" stable/* \
             --repo "$GITHUB_REPOSITORY" \
             --title "Pyxis SAR Explorer ${{ needs.build.outputs.version }}" \
             --notes "Installers for Windows (.msi), macOS (.dmg) and Linux (.deb). Pyxis SAR Explorer is a modified version of DataWarrior, licensed under the GNU GPL v3; the complete source is this repository at this tag. The macOS and Windows installers are not code-signed, so the system asks for confirmation on first start."

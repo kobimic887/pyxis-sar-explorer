@@ -30,6 +30,9 @@ they were not all manually retested in this change.
 
 ## Verification added
 
+- Scale: the scaffold tree logic took 3.9 s for 22,348 rows headless (the two supplied collections repeated 37 times, so only 377 distinct scaffolds; a real collection of that size has more and will be slower). The application's windows were not tested at that size.
+- Light look and feel: tree, grid and tables were rendered once in the Nebula look and viewed. Known difference: the locked-column strip does not draw the alternating row background that light looks add.
+
 - `SdfOverviewGuiCheck` (run by hand on the two supplied SD-files, which are not in the repository): the ordinary file import loads `Chembl_612285and6.sdf` (259 rows, 3 without structure; one stereo question, answered No) and `Amino Acids.sdf` (345 rows, no question); SAR Overview gives 95 scaffolds and 1,238 swaps for the first, and for the second 65 ring scaffolds with 109 ring-free molecules, or 303 decomposed molecules around a drawn amino-acid core.
 
 - `RGroupGridTest`: duplicate/missing/nonfinite values, hydrogen, all five aggregations, empty combinations, ordering and both axis/cell caps.
