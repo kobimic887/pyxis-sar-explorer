@@ -153,15 +153,6 @@ jobs:
         shell: bash
         run: python pyxis/check-packaged-app.py "app-image/$APP_NAME/$APP_NAME.exe" --document --evidence-dir packaged-check/document
 
-      - name: Packaged launch evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: packaged-evidence-${{ matrix.type }}-${{ matrix.arch }}
-          path: |
-            packaged-check/
-            runtime-architecture.txt
-
       - name: Make installer
         shell: bash
         run: |
@@ -185,6 +176,28 @@ jobs:
               path.rename(path.with_name(path.stem + '-${{ matrix.arch }}' + path.suffix))
           PYTHON
           ls -l installers
+
+      - name: Install and check MSI
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./pyxis/check-installed-windows.ps1
+
+      - name: Install and check DEB
+        if: runner.os == 'Linux'
+        run: bash pyxis/check-installed-linux.sh
+
+      - name: Mount and check DMG application
+        if: runner.os == 'macOS'
+        run: python3 pyxis/check-installed-macos.py
+
+      - name: Packaged launch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-evidence-${{ matrix.type }}-${{ matrix.arch }}
+          path: |
+            packaged-check/
+            runtime-architecture.txt
 
       - uses: actions/upload-artifact@v4
         with:
