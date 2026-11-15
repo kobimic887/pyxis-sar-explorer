@@ -53,6 +53,20 @@ The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
   30 columns and 10,000 cells; filter/hide columns for larger datasets. It uses Java's
   ZIP writer and Office Open XML, with no new dependency. Existing files are refused.
 
+* **File → Import CDD Vault Molecules (not yet tested against a live vault)...**
+  (`importCDDVaultMolecules`) reads up to 100 explicit molecule IDs from one vault,
+  using the documented [CDD molecule API](https://support.collaborativedrug.com/hc/en-us/articles/115005685466-Molecule-s-GET-POST-PUT).
+  It sends `X-CDD-Token` over HTTPS to the official CDD endpoint and reads each
+  `/api/v1/vaults/{vault}/molecules/{id}`. It imports molfile (or SMILES), ID, name,
+  vault ID and molecule-fields JSON; it does not flatten assays, batches or saved searches.
+  All requested molecules must succeed before a document is created. The token is
+  requested at execution, kept only in memory, and excluded from task properties,
+  macros, preferences and logs. Macros record IDs and prompt for the token on replay.
+  **Not yet tested against a live vault**; local HTTP mocks verify the transport/mapping.
+
+The [training workflow coverage](pyxis/TRAINING-COVERAGE.md) lists supported operations,
+partial equivalents, missing column locking and verification limits.
+
 ### What Pyxis changed
 * Window titles and the About text name the program Pyxis SAR Explorer.
 * The program does not contact the DataWarrior update server and does not update itself

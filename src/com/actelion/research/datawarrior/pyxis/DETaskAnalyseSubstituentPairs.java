@@ -118,8 +118,8 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 		mMode = new JComboBox<>(new String[] {"Same scaffold, one changed R group", "Same substituents, different scaffold"});
 		content.add(new JLabel("Pair mode:"), "1,7");
 		content.add(mMode, "3,7");
-		content.add(new JLabel("<html>Creates a new table with all pairs of molecules that have the same<br>"
-				+ "scaffold and differ at exactly one of the R-group columns R1, R2, ...</html>"), "1,9,3,9");
+		content.add(new JLabel("<html>One changed R group: same scaffold, one different R position.<br>"
+				+ "Scaffold hopping: different scaffold, identical ordered R1, R2, ... keys.</html>"), "1,9,3,9");
 		return content;
 		}
 
@@ -312,7 +312,7 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 
 		if (analysis.isTruncated())
 			showInteractiveTaskMessage("More than "+MAX_PAIRS+" pairs exist. Only the first "+MAX_PAIRS+" are listed.\n"
-					+ "Filter the molecules or decompose with a more specific scaffold to see all.", JOptionPane.WARNING_MESSAGE);
+					+ "Create a smaller derived table or decompose with a more specific scaffold to see all.", JOptionPane.WARNING_MESSAGE);
 		}
 
 	/** Missing values stay empty instead of becoming 'NaN' text. */

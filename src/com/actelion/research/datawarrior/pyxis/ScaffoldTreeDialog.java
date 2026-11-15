@@ -40,7 +40,7 @@ public class ScaffoldTreeDialog extends JDialog {
 	private final String mStructureColumnName;
 	private final java.util.Map<Node,String> mTemplates = new java.util.IdentityHashMap<>();
 	private final ScaffoldHierarchy mHierarchy;
-	private final CompoundRecord[] mRecord;
+	private CompoundRecord[] mRecord;
 	private final JTree mTree;
 	private final JCheckBox mCheckBoxExactOnly;
 	private final JLabel mLabelStatus;
@@ -176,6 +176,11 @@ public class ScaffoldTreeDialog extends JDialog {
 	public void addEditedScaffold(com.actelion.research.chem.StereoMolecule fragment) {
 		CompoundTableModel model = mParentFrame.getTableModel();
 		int column = model.findColumn(mStructureColumnName);
+		java.util.Set<CompoundRecord> known = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+		java.util.List<CompoundRecord> records = new java.util.ArrayList<>(java.util.Arrays.asList(mRecord));
+		known.addAll(records);
+		for (int r=0; r<model.getTotalRowCount(); r++) if (known.add(model.getTotalRecord(r))) records.add(model.getTotalRecord(r));
+		mRecord = records.toArray(new CompoundRecord[0]);
 		com.actelion.research.chem.StereoMolecule[] molecules = new com.actelion.research.chem.StereoMolecule[mRecord.length];
 		java.util.Set<CompoundRecord> present = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
 		for (int r=0; r<model.getTotalRowCount(); r++) present.add(model.getTotalRecord(r));

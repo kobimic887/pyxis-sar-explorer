@@ -25,7 +25,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ScaffoldTreeGuiCheck {
+	private static String picturePrefix;
 	public static void main(String[] args) throws Exception {
+		picturePrefix = args[1].replaceFirst("\\.png$", "");
 		Thread.setDefaultUncaughtExceptionHandler((thread, error) -> { error.printStackTrace(); System.exit(1); });
 		DataWarriorLinux.main(new String[] { args[0] });
 
@@ -88,7 +90,21 @@ public class ScaffoldTreeGuiCheck {
 					result[0] = "implausible family size "+family;
 
 				// Exercise the editor's accepted-structure path in the real window.
-				d.addEditedScaffold(new com.actelion.research.chem.IDCodeParser().getCompactMolecule(node.getIDCode()));
+				Rectangle bounds=tree.getRowBounds(0);
+				tree.dispatchEvent(new java.awt.event.MouseEvent(tree,java.awt.event.MouseEvent.MOUSE_RELEASED,System.currentTimeMillis(),0,bounds.x+10,bounds.y+10,1,true,java.awt.event.MouseEvent.BUTTON3));
+				JMenuItem edit=null;
+				for (javax.swing.MenuElement element:MenuSelectionManager.defaultManager().getSelectedPath())
+					if (element instanceof JPopupMenu) for (Component item:((JPopupMenu)element).getComponents())
+						if (item instanceof JMenuItem && "Edit Scaffold...".equals(((JMenuItem)item).getText())) edit=(JMenuItem)item;
+				if (edit==null) throw new AssertionError("scaffold context menu missing");
+				javax.swing.Timer accept=new javax.swing.Timer(300,e -> {
+					for (Window window:Window.getWindows()) if (window.isShowing() && window instanceof com.actelion.research.gui.editor.SwingEditorDialog) {
+						List<Component> controls=new ArrayList<>(); collect((Container)window,controls);
+						for (Component control:controls) if (control instanceof JButton && "OK".equals(((JButton)control).getText())) { ((JButton)control).doClick(); return; }
+						throw new AssertionError("structure editor OK missing");
+					}
+					});
+				accept.setRepeats(false); accept.start(); edit.doClick();
 				DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
 				ScaffoldHierarchy.Node custom = (ScaffoldHierarchy.Node)((DefaultMutableTreeNode)root.getLastChild()).getUserObject();
 				if (!custom.isUserDefined() || custom.getMemberCount() < family) throw new AssertionError("user scaffold membership");
@@ -138,7 +154,9 @@ public class ScaffoldTreeGuiCheck {
 		String scaffold = ScaffoldHierarchy.murckoScaffoldIDCode(model.getChemicalStructure(model.getTotalRecord(0), structure, 0, null));
 		config.setProperty("scaffolds", scaffold);
 		config.setProperty("automatic", "false");
-		new com.actelion.research.datawarrior.pyxis.DETaskOrientScaffold((DEFrame)d.getOwner()).executeAsSubtask(config, null);
+		com.actelion.research.datawarrior.pyxis.DETaskOrientScaffold orient = new com.actelion.research.datawarrior.pyxis.DETaskOrientScaffold((DEFrame)d.getOwner());
+		SwingUtilities.invokeAndWait(() -> { orient.createDialogContent(); orient.setDialogConfiguration(config); if (!original[0].equals(orient.getDialogConfiguration().getProperty("members"))) throw new AssertionError("orientation macro lost family keys"); });
+		orient.executeAsSubtask(config, null);
 		for (int r=0; r<original.length; r++)
 			if (!original[r].equals(model.getTotalValueAt(r, structure))) fail("orientation changed chemical identity");
 		int coordinates = model.getChildColumn(structure, CompoundTableModel.cColumnType2DCoordinates);
@@ -174,7 +192,8 @@ public class ScaffoldTreeGuiCheck {
 		config.setProperty("scaffoldColumn", "Scaffold"); config.setProperty("valueColumn", "Ki"); config.setProperty("mode", "hopping");
 		com.actelion.research.datawarrior.pyxis.DETaskAnalyseSubstituentPairs task = new com.actelion.research.datawarrior.pyxis.DETaskAnalyseSubstituentPairs(input);
 		SwingUtilities.invokeAndWait(() -> {
-			task.createDialogContent(); task.setDialogConfiguration(config);
+			JComponent content = task.createDialogContent(); task.setDialogConfiguration(config);
+			renderPanel(input,content,"pairs");
 			if (!"hopping".equals(task.getDialogConfiguration().getProperty("mode"))) throw new AssertionError("hopping mode dialog roundtrip");
 			});
 		task.executeAsSubtask(config, null);
@@ -184,7 +203,7 @@ public class ScaffoldTreeGuiCheck {
 		System.out.println("Hopping GUI configuration and task: 3 input rows -> 2 pairs with scaffold A/B structures");
 		config.setProperty("moleculeColumn", "Structure"); config.setProperty("scaffold", a); config.setProperty("valueColumns", "Ki");
 		com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupTable copy = new com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupTable(input);
-		SwingUtilities.invokeAndWait(() -> { copy.createDialogContent(); copy.setDialogConfiguration(config); if (!a.equals(copy.getDialogConfiguration().getProperty("scaffold"))) throw new AssertionError("R-group dialog roundtrip"); });
+		SwingUtilities.invokeAndWait(() -> { JComponent content=copy.createDialogContent(); copy.setDialogConfiguration(config); renderPanel(input,content,"rgroup"); if (!a.equals(copy.getDialogConfiguration().getProperty("scaffold"))) throw new AssertionError("R-group dialog roundtrip"); });
 		copy.executeAsSubtask(config,null);
 		CompoundTableModel derived = null;
 		for (DEFrame f:DataWarrior.getApplication().getFrameList()) if (f.getTitle().startsWith("R-Group Table (derived copy)")) derived = f.getTableModel();
@@ -194,6 +213,8 @@ public class ScaffoldTreeGuiCheck {
 		System.out.println("R-group GUI/task: 2 matching rows, structures and Ki copied; source unchanged by derived edits");
 		java.nio.file.Path word = java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "pyxis-visible-table-"+System.nanoTime()+".docx");
 		SwingUtilities.invokeAndWait(() -> {
+			com.actelion.research.datawarrior.pyxis.DETaskExportWord wordTask=new com.actelion.research.datawarrior.pyxis.DETaskExportWord(input);
+			JComponent content=wordTask.createDialogContent(); java.util.Properties path=new java.util.Properties(); path.setProperty("fileName",word.toString()); wordTask.setDialogConfiguration(path); renderPanel(input,content,"word");
 			input.getMainFrame().getMainPane().getTableView().setColumnVisibility(table.findColumn("R2"), false);
 			int flag=table.getUnusedRowFlag(true);
 			table.getTotalRecord(1).setFlag(flag);
@@ -210,8 +231,61 @@ public class ScaffoldTreeGuiCheck {
 			if (rowCount!=3 || cells!=12 || images!=6 || document.getDocumentElement().getTextContent().contains("R2")) fail("visible Word snapshot: rows="+rowCount+" cells="+cells+" images="+images);
 		}
 		System.out.println("Visible Word snapshot: 2 filtered rows x 4 displayed columns, 6 PNG structures; "+word);
+		com.actelion.research.datawarrior.pyxis.DETaskImportCddVault cdd = new com.actelion.research.datawarrior.pyxis.DETaskImportCddVault(input);
+		java.util.Properties cddConfig = new java.util.Properties(); cddConfig.setProperty("vault","23"); cddConfig.setProperty("molecules","1,2");
+		SwingUtilities.invokeAndWait(() -> { JComponent content=cdd.createDialogContent(); cdd.setDialogConfiguration(cddConfig); renderPanel(input,content,"cdd"); if (cdd.getDialogConfiguration().size()!=2 || !"1,2".equals(cdd.getDialogConfiguration().getProperty("molecules"))) throw new AssertionError("CDD config or token persistence"); });
+		DEFrame cddFrame=DataWarrior.getApplication().getEmptyFrame("CDD offline mapping fixture");
+		com.actelion.research.datawarrior.pyxis.DETaskImportCddVault.populate(cddFrame.getTableModel(),java.util.List.of(new com.actelion.research.datawarrior.pyxis.CddVaultClient.Molecule("1","Fixture",a,"","{\"Ki\":2.5}")),"23");
+		CompoundTableModel cddTable=cddFrame.getTableModel();
+		if (cddTable.getTotalRowCount()!=1 || !cddTable.isColumnTypeStructure(0) || !"23".equals(cddTable.getTotalValueAt(0,cddTable.findColumn("CDD Vault ID")))) fail("CDD built-app mapping");
+		System.out.println("CDD GUI config excludes token; offline mapping creates one molecule with vault provenance (live vault untested)");
+		SwingUtilities.invokeAndWait(() -> {
+			ScaffoldHierarchy hierarchy=new ScaffoldHierarchy();
+			com.actelion.research.table.model.CompoundRecord[] records=new com.actelion.research.table.model.CompoundRecord[3];
+			for (int r=0;r<3;r++) { records[r]=table.getTotalRecord(r); hierarchy.addRow(r,ScaffoldHierarchy.murckoScaffoldIDCode(table.getChemicalStructure(records[r],4,0,null))); }
+			hierarchy.build(1);
+			String list=table.getListHandler().createList("Only last row");
+			records[2].setFlag(table.getListHandler().getListFlagNo(list));
+			ScaffoldTreeDialog stats=new ScaffoldTreeDialog(input,hierarchy,records,"Structure",1,0);
+			stats.setVisible(true);
+			List<Component> controls=new ArrayList<>(); collect(stats.getContentPane(),controls);
+			JComboBox<String> subset=null;
+			for (Component control:controls) if (control instanceof JComboBox) {
+				JComboBox<String> combo=(JComboBox<String>)control;
+				for (int i=0;i<combo.getItemCount();i++) {
+					if ("Ki".equals(combo.getItemAt(i))) combo.setSelectedItem("Ki");
+					if ("All rows".equals(combo.getItemAt(i))) subset=combo;
+				}
+				}
+			if (subset==null) throw new AssertionError("subset selector");
+			checkStatsExport(stats,controls,2,4);
+			int exclude=table.getUnusedRowFlag(true); records[2].setFlag(exclude); table.updateExternalExclusion(exclude,false,true);
+			subset.setSelectedItem("Visible rows only"); checkStatsExport(stats,controls,1,2);
+			subset.setSelectedItem("List: "+list); checkStatsExport(stats,controls,1,6);
+			try { BufferedImage image=new BufferedImage(stats.getWidth(),stats.getHeight(),BufferedImage.TYPE_INT_RGB); Graphics2D g=image.createGraphics(); stats.paint(g); g.dispose(); ImageIO.write(image,"png",new File(picturePrefix+"-statistics.png")); } catch(Exception e) { throw new RuntimeException(e); }
+			stats.dispose();
+		});
+		System.out.println("Statistics GUI snapshots: all rows count 2/mean 4/median 4; visible count 1/value 2; row-list count 1/value 6");
+
 
 		}
+
+	private static void checkStatsExport(ScaffoldTreeDialog dialog,List<Component> controls,int count,double mean) {
+		for (Component control:controls) if (control instanceof JButton && "Refresh".equals(((JButton)control).getText())) ((JButton)control).doClick();
+		for (Component control:controls) if (control instanceof JButton && "Tree As New Table".equals(((JButton)control).getText())) ((JButton)control).doClick();
+		CompoundTableModel result=null;
+		for (DEFrame frame:DataWarrior.getApplication().getFrameList()) if (frame.getTitle().startsWith("Scaffold Tree of "+((DEFrame)dialog.getOwner()).getTitle())) result=frame.getTableModel();
+		if (result==null || Double.parseDouble(result.getTotalValueAt(0,result.findColumn("Subset Count")))!=count || Double.parseDouble(result.getTotalValueAt(0,result.findColumn("Mean")))!=mean || Double.parseDouble(result.getTotalValueAt(0,result.findColumn("Median")))!=mean) throw new AssertionError("statistics export mismatch");
+	}
+
+	private static void renderPanel(DEFrame owner,JComponent content,String suffix) {
+		try {
+			JDialog window=new JDialog(owner,suffix,false); window.setContentPane(content); window.pack(); window.setVisible(true);
+			BufferedImage image=new BufferedImage(window.getWidth(),window.getHeight(),BufferedImage.TYPE_INT_RGB);
+			Graphics2D g=image.createGraphics(); window.paint(g); g.dispose();
+			ImageIO.write(image,"png",new File(picturePrefix+"-"+suffix+".png")); window.dispose();
+		} catch(Exception e) { throw new RuntimeException(e); }
+	}
 
 	private static int countNodes(DefaultMutableTreeNode node) {
 		int count = 1;

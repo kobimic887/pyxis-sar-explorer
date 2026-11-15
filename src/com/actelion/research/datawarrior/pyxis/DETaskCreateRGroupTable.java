@@ -28,6 +28,11 @@ public class DETaskCreateRGroupTable extends ConfigurableTask {
         result.sort(Comparator.comparingInt(c -> Integer.parseInt(source.getColumnTitleNoAlias(c).substring(1))));
         return result;
     }
+    private static void addRow(JPanel panel,int row,String label,JComponent control) {
+        GridBagConstraints c=new GridBagConstraints(); c.gridy=row; c.insets=new Insets(4,8,4,8); c.anchor=GridBagConstraints.WEST;
+        c.gridx=0; panel.add(new JLabel(label),c); c.gridx=1; c.weightx=1; c.fill=GridBagConstraints.HORIZONTAL; panel.add(control,c);
+    }
+
     private void fillScaffolds() {
         scaffold.removeAllItems();
         int c = source.findColumn((String)scaffoldColumn.getSelectedItem());
@@ -37,7 +42,7 @@ public class DETaskCreateRGroupTable extends ConfigurableTask {
         for (String code:codes) scaffold.addItem(code);
     }
     @Override public JComponent createDialogContent() {
-        JPanel panel = new JPanel(new GridLayout(0,2,8,8));
+        JPanel panel = new JPanel(new GridBagLayout());
         scaffoldColumn = new JComboBox<>(); moleculeColumn = new JComboBox<>(); scaffold = new JComboBox<>(); id = new JComboBox<>();
         id.addItem("<row number>");
         List<String> names = new ArrayList<>();
@@ -47,17 +52,19 @@ public class DETaskCreateRGroupTable extends ConfigurableTask {
             else if (source.getColumnSpecialType(c) == null) { id.addItem(title); names.add(title); }
         }
         scaffold.setRenderer((list,value,index,selected,focus) -> {
-            JStructureView view = new JStructureView(); view.setIDCode(value); view.setPreferredSize(new Dimension(220,80)); return view;
+            JStructureView view = new JStructureView(); view.setForeground(Color.BLACK); view.setBackground(Color.WHITE); view.setOpaque(true); view.setEnabled(false); view.setIDCode(value); view.setPreferredSize(new Dimension(220,80)); return view;
         });
-        scaffold.setEditable(!isInteractive()); scaffoldColumn.setEditable(!isInteractive()); moleculeColumn.setEditable(!isInteractive()); id.setEditable(!isInteractive());
+        scaffold.setEditable(false); scaffoldColumn.setEditable(!isInteractive()); moleculeColumn.setEditable(!isInteractive()); id.setEditable(!isInteractive());
         scaffoldColumn.addActionListener(e -> fillScaffolds());
         values = new JList<>(names.toArray(new String[0]));
-        panel.add(new JLabel("Decomposed scaffold column:")); panel.add(scaffoldColumn);
-        panel.add(new JLabel("Choose one scaffold:")); panel.add(scaffold);
-        panel.add(new JLabel("Molecule column:")); panel.add(moleculeColumn);
-        panel.add(new JLabel("ID column:")); panel.add(id);
-        panel.add(new JLabel("Value columns (multiple selection):")); panel.add(new JScrollPane(values));
-        panel.add(new JLabel("Derived copy; edits never update the source."));
+        addRow(panel,0,"Decomposed scaffold column:",scaffoldColumn);
+        addRow(panel,1,"Choose one scaffold:",scaffold);
+        addRow(panel,2,"Molecule column:",moleculeColumn);
+        addRow(panel,3,"ID column:",id);
+        values.setVisibleRowCount(5);
+        JScrollPane scroll=new JScrollPane(values); scroll.setPreferredSize(new Dimension(260,100));
+        addRow(panel,4,"Value columns (multiple selection):",scroll);
+        addRow(panel,5,"Derived copy:",new JLabel("Edits never update the source."));
         return panel;
     }
     @Override public Properties getDialogConfiguration() {

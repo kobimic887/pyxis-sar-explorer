@@ -630,6 +630,9 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuFileOpenSpecial.add(jMenuFileOpenMacro);
 		jMenuFileOpenSpecial.add(jMenuFileOpenMDLReactions);
 		jMenuFile.add(jMenuFileOpenSpecial);
+		JMenuItem cdd = new JMenuItem("Import CDD Vault Molecules (not yet tested against a live vault)...");
+		cdd.addActionListener(e -> new com.actelion.research.datawarrior.pyxis.DETaskImportCddVault(mParentFrame).defineAndRun());
+		jMenuFile.add(cdd);
 		addResourceFileMenus(jMenuFile);
 		jMenuHelpMoreData = new JMenuItem();
 		jMenuHelpMoreData.setText("Download Data (upstream DataWarrior)...");
