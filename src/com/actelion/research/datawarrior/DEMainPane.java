@@ -89,6 +89,9 @@ public class DEMainPane extends JDockingPanel
 	private final DEFrame					mParentFrame;
 	private final DECompoundTableModel		mTableModel;
 	private final CompoundListSelectionModel mListSelectionModel;
+
+	/** @return the row selection shared by all views of this document (used by Pyxis LiveSelectionFilter) */
+	public CompoundListSelectionModel getListSelectionModel() { return mListSelectionModel; }
 	private final DEParentPane				mParentPane;
 	private final DEDetailPane				mDetailPane;
 	private final DEStatusPanel				mStatusPanel;

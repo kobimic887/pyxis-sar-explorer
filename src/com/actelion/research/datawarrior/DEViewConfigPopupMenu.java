@@ -213,6 +213,14 @@ public class DEViewConfigPopupMenu extends JPopupMenu implements ActionListener,
 			item.addActionListener(this);
 			add(item);
 
+			// Pyxis: restrict this one view to whatever is selected in the other views
+			final com.actelion.research.table.view.JVisualization thisVisualization = thisVP.getVisualization();
+			JCheckBoxMenuItem liveItem = new JCheckBoxMenuItem("Show Only Rows Selected In Other Views",
+					com.actelion.research.datawarrior.pyxis.LiveSelectionFilter.isActive(thisVisualization));
+			liveItem.addActionListener(e -> com.actelion.research.datawarrior.pyxis.LiveSelectionFilter.setActive(
+					thisVisualization, mMainPane.getListSelectionModel(), ((JCheckBoxMenuItem)e.getSource()).isSelected()));
+			add(liveItem);
+
 			JMenu menuSynchronize = null;
 			ButtonGroup groupSynchronize = null;
 			for (Dockable dockable:mMainPane.getDockables()) {

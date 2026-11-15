@@ -34,3 +34,8 @@ javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/RGroupGridGuiC
 java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/grid-prefs" \
   --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
   -classpath "datawarrior_all.jar:$OUT" RGroupGridGuiCheck "$OUT/grid.dwam" "$2"
+
+javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/LiveSelectionFilterGuiCheck.java
+java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/live-prefs" \
+  --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+  -classpath "datawarrior_all.jar:$OUT" LiveSelectionFilterGuiCheck "$OUT/grid.dwam" "${2%.png}-live-filter.png"
