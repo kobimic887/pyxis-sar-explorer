@@ -185,6 +185,25 @@ public class ScaffoldTreeGuiCheck {
         java.util.Collections.sort(nodes); return nodes.toString();
     }
 
+    private static String treeSignature(List<Component> controls) {
+        List<String> trees=new ArrayList<>();
+        for(Component c:controls) if(c instanceof JTree) trees.add(treeSignature((JTree)c));
+        return trees.toString();
+    }
+
+    // Row-visibility events fire deferred (CompoundTableModel.updateVisibleRecords uses fireEventsLater);
+    // poll with bounded EDT round-trips until the visible row count reaches the expected value, so the
+    // assertions do not depend on platform event timing. Returns false on timeout.
+    private static boolean waitForVisibleRows(CompoundTableModel model,int expected) throws Exception {
+        for(int i=0;i<40;i++) {
+            final int[] count=new int[1];
+            SwingUtilities.invokeAndWait(() -> count[0]=model.getRowCount());
+            if(count[0]==expected) return true;
+            Thread.sleep(50);
+            }
+        return false;
+    }
+
     private static void checkPersistence(DEFrame source) throws Exception {
         String name = com.actelion.research.datawarrior.pyxis.ScaffoldSession.NAME;
         String[] expectedTree={null};
@@ -334,6 +353,8 @@ public class ScaffoldTreeGuiCheck {
 		});
 		System.out.println("Statistics GUI snapshots: all rows count 2/mean 4/median 4; visible count 1/value 2; row-list count 1/value 6");
         CompoundTableModel pairOutput=output, rOutput=derived;
+        final List<Component> linkedControls=new ArrayList<>();
+        final ScaffoldTreeDialog[] linkedTreeRef={null};
         SwingUtilities.invokeAndWait(() -> {
             // Drive a real scaffold tree selection, rather than calling just the filter helper.
             ScaffoldHierarchy linkedHierarchy=new ScaffoldHierarchy();
@@ -342,16 +363,26 @@ public class ScaffoldTreeGuiCheck {
             linkedHierarchy.build(1);
             ScaffoldTreeDialog linkedTree=new ScaffoldTreeDialog(input,linkedHierarchy,linkedRecords,"Structure",1,0);
             linkedTree.setVisible(true);
-            List<Component> linkedControls=new ArrayList<>(); collect(linkedTree.getContentPane(),linkedControls);
+            collect(linkedTree.getContentPane(),linkedControls);
+            boolean found=false;
             for(Component control:linkedControls) if(control instanceof JTree) {
                 JTree tree=(JTree)control;
                 for(int r=0;r<tree.getRowCount();r++) {
                     ScaffoldHierarchy.Node n=(ScaffoldHierarchy.Node)((DefaultMutableTreeNode)tree.getPathForRow(r).getLastPathComponent()).getUserObject();
-                    if(b.equals(n.getIDCode())) { tree.setSelectionRow(r); if(rOutput.getRowCount()!=0) throw new AssertionError("tree selection did not filter R-group table"); }
+                    if(b.equals(n.getIDCode())) { tree.setSelectionRow(r); found=true; }
                 }
-                tree.clearSelection(); if(rOutput.getRowCount()!=2) throw new AssertionError("tree clear did not restore rows");
             }
-            linkedTree.dispose();
+            linkedTreeRef[0]=linkedTree;
+            if(!found) throw new AssertionError("pyridine scaffold missing from the linked tree: "+treeSignature(linkedControls));
+        });
+        // Row-visibility events are fired deferred by CompoundTableModel.updateVisibleRecords();
+        // flush the EDT queue deterministically before asserting, so the check does not depend
+        // on event timing across platforms.
+        if(!waitForVisibleRows(rOutput,0)) throw new AssertionError("tree selection did not filter R-group table: visible="+rOutput.getRowCount()+" total="+rOutput.getTotalRowCount());
+        SwingUtilities.invokeAndWait(() -> { for(Component control:linkedControls) if(control instanceof JTree) ((JTree)control).clearSelection(); });
+        if(!waitForVisibleRows(rOutput,2)) throw new AssertionError("tree clear did not restore rows: visible="+rOutput.getRowCount()+" total="+rOutput.getTotalRowCount());
+        SwingUtilities.invokeAndWait(() -> linkedTreeRef[0].dispose());
+        SwingUtilities.invokeAndWait(() -> {
             // Select after source/target sorts. Original records, including duplicate structures, stay distinct.
             com.actelion.research.table.model.CompoundRecord[] originals={table.getTotalRecord(0),table.getTotalRecord(1),table.getTotalRecord(2)};
             table.sort(3,true,false); rOutput.sort(rOutput.findColumn("Ki"),true,false);
