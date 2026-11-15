@@ -114,9 +114,7 @@ jobs:
             --main-class "$MAIN_CLASS" \
             --java-options "$JAVA_OPTIONS" \
             --add-modules "$MODULES" \
-            --file-associations pyxis/dwar.properties \
-            --file-associations pyxis/dwam.properties \
-            --file-associations pyxis/dwat.properties \
+            ${{ runner.os == 'macOS' && '--file-associations pyxis/dwar.properties --file-associations pyxis/dwam.properties --file-associations pyxis/dwat.properties' || '' }} \
             --icon "pyxis/icons/pyxis.${{ runner.os == 'macOS' && 'icns' || runner.os == 'Windows' && 'ico' || 'png' }}" \
             ${{ runner.os == 'macOS' && '--mac-package-identifier com.pyxisdiscovery.sarexplorer' || '' }} \
             --dest app-image
