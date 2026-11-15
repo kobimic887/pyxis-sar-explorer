@@ -151,9 +151,10 @@ public class ScaffoldTreeGuiCheck {
 	private static void checkPairTask() throws Exception {
 		DEFrame input = DataWarrior.getApplication().getEmptyFrame("Hopping fixture");
 		CompoundTableModel table = input.getTableModel();
-		table.initializeTable(3, 4);
-		String[] titles = {"Scaffold", "R1", "R2", "Ki"};
-		for (int c=0; c<4; c++) table.setColumnName(titles[c], c);
+		table.initializeTable(3, 5);
+		String[] titles = {"Scaffold", "R1", "R2", "Ki", "Structure"};
+		for (int c=0; c<5; c++) table.setColumnName(titles[c], c);
+		table.setColumnProperty(4, CompoundTableModel.cColumnPropertySpecialType, CompoundTableModel.cColumnTypeIDCode);
 		for (int c=0; c<3; c++) table.setColumnProperty(c, CompoundTableModel.cColumnPropertySpecialType, CompoundTableModel.cColumnTypeIDCode);
 		com.actelion.research.chem.StereoMolecule benzene = new com.actelion.research.chem.StereoMolecule();
 		new com.actelion.research.chem.SmilesParser().parse(benzene, "c1ccccc1");
@@ -163,6 +164,7 @@ public class ScaffoldTreeGuiCheck {
 		for (int r=0; r<3; r++) {
 			table.setTotalValueAt(r == 1 ? b : a, r, 0);
 			table.setTotalValueAt(a, r, 1);
+			table.setTotalValueAt(r == 1 ? b : a, r, 4);
 			table.setTotalValueAt("", r, 2);
 			table.setTotalValueAt(Integer.toString(2+r*2), r, 3);
 			}
@@ -179,6 +181,16 @@ public class ScaffoldTreeGuiCheck {
 		for (DEFrame f:DataWarrior.getApplication().getFrameList()) if (f.getTitle().startsWith("Scaffold Hopping Pairs")) output = f.getTableModel();
 		if (output == null || output.getTotalRowCount() != 2 || !output.isColumnTypeStructure(output.findColumn("Scaffold B"))) fail("hopping task output");
 		System.out.println("Hopping GUI configuration and task: 3 input rows -> 2 pairs with scaffold A/B structures");
+		config.setProperty("moleculeColumn", "Structure"); config.setProperty("scaffold", a); config.setProperty("valueColumns", "Ki");
+		com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupTable copy = new com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupTable(input);
+		SwingUtilities.invokeAndWait(() -> { copy.createDialogContent(); copy.setDialogConfiguration(config); if (!a.equals(copy.getDialogConfiguration().getProperty("scaffold"))) throw new AssertionError("R-group dialog roundtrip"); });
+		copy.executeAsSubtask(config,null);
+		CompoundTableModel derived = null;
+		for (DEFrame f:DataWarrior.getApplication().getFrameList()) if (f.getTitle().startsWith("R-Group Table (derived copy)")) derived = f.getTableModel();
+		if (derived == null || derived.getTotalRowCount()!=2 || derived.findColumn("Ki")<0 || derived.findColumn("R2")<0 || !a.equals(derived.getTotalValueAt(1,0))) fail("derived R-group table");
+		derived.setTotalValueAt("999",0,derived.findColumn("Ki"));
+		if (!"2".equals(table.getTotalValueAt(0,3))) fail("derived copy changed source");
+		System.out.println("R-group GUI/task: 2 matching rows, structures and Ki copied; source unchanged by derived edits");
 		}
 
 	private static int countNodes(DefaultMutableTreeNode node) {

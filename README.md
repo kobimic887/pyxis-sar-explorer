@@ -6,7 +6,7 @@ the original README follows below. It is an independent program and makes no cla
 reproduce the results of any other SAR software.
 
 ### What Pyxis added
-Both are in the **Chemistry** menu and can be recorded in macros.
+The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
 
 * **Build Scaffold Tree...** (`buildScaffoldTree`) opens a window with a hierarchical tree of
   the scaffolds of all molecules. Small scaffolds shared by many molecules are at the top,
@@ -38,6 +38,13 @@ Both are in the **Chemistry** menu and can be recorded in macros.
   with the same R positions; a missing position is not inferred from an empty cell.
   Values compare original numerical data, not log-display coordinates. Both modes
   consider all rows, including filtered rows, and cap output at 200,000 pairs.
+
+* **Create R-Group Table...** (`createRGroupTable`) copies all rows with one chosen
+  decomposed scaffold into a new document: Scaffold, numbered R-group columns, molecule,
+  chosen ID (or source row number), and selected value columns. Run Decompose R-Groups
+  first. This is a **derived copy**, named in the window title: edits there do not
+  modify the source and it does not refresh from the source. This reuses the existing
+  decomposition rather than computing a second, potentially inconsistent one.
 
 ### What Pyxis changed
 * Window titles and the About text name the program Pyxis SAR Explorer.
