@@ -9,6 +9,7 @@
  */
 
 import com.actelion.research.datawarrior.DEFrame;
+import com.actelion.research.datawarrior.DataWarrior;
 import com.actelion.research.datawarrior.DataWarriorLinux;
 import com.actelion.research.datawarrior.pyxis.ScaffoldHierarchy;
 import com.actelion.research.datawarrior.pyxis.ScaffoldTreeDialog;
@@ -45,13 +46,15 @@ public class ScaffoldTreeGuiCheck {
 				collect(d.getContentPane(), all);
 				JTree tree = null;
 				JButton select = null;
+				JButton asTable = null;
 				JCheckBox exact = null;
 				for (Component c:all) {
 					if (c instanceof JTree) tree = (JTree)c;
 					if (c instanceof JButton && "Select Molecules".equals(((JButton)c).getText())) select = (JButton)c;
+					if (c instanceof JButton && "Tree As New Table".equals(((JButton)c).getText())) asTable = (JButton)c;
 					if (c instanceof JCheckBox) exact = (JCheckBox)c;
 					}
-				if (tree == null || select == null || exact == null) {
+				if (tree == null || select == null || exact == null || asTable == null) {
 					result[0] = "tree, select button or checkbox missing";
 					return;
 					}
@@ -79,6 +82,24 @@ public class ScaffoldTreeGuiCheck {
 				else if (family == 0 || family > tableModel.getTotalRowCount())
 					result[0] = "implausible family size "+family;
 
+				// 'Tree As New Table' must open a document with one row per scaffold of the tree
+				int scaffolds = countNodes((DefaultMutableTreeNode)tree.getModel().getRoot()) - 1;
+				asTable.doClick();
+				CompoundTableModel treeTable = null;
+				for (DEFrame frame:DataWarrior.getApplication().getFrameList())
+					if (frame != d.getOwner() && frame.getTableModel().getTotalRowCount() != 0)
+						treeTable = frame.getTableModel();
+				if (result[0] == null) {
+					if (treeTable == null)
+						result[0] = "'Tree As New Table' did not open a filled document";
+					else if (treeTable.getTotalRowCount() != scaffolds)
+						result[0] = "tree table has "+treeTable.getTotalRowCount()+" rows for "+scaffolds+" scaffolds";
+					else if (!treeTable.isColumnTypeStructure(treeTable.findColumn("Scaffold")))
+						result[0] = "the tree table's Scaffold column is not a structure column";
+					else if (!Integer.toString(node.getMemberCount()).equals(treeTable.getTotalValueAt(0, treeTable.findColumn("Molecules"))))
+						result[0] = "first tree table row does not carry the first scaffold's molecule count";
+					}
+
 				BufferedImage image = new BufferedImage(d.getWidth(), d.getHeight(), BufferedImage.TYPE_INT_RGB);
 				Graphics2D g = image.createGraphics();
 				d.paint(g);
@@ -86,7 +107,7 @@ public class ScaffoldTreeGuiCheck {
 				ImageIO.write(image, "png", new File(args[1]));
 
 				System.out.println("rows in table: "+tableModel.getTotalRowCount()+", tree rows: "+tree.getRowCount()
-						+", first scaffold family: "+family+", exact: "+exactCount);
+						+", first scaffold family: "+family+", exact: "+exactCount+", scaffolds written to new table: "+scaffolds);
 				}
 			catch (Exception e) {
 				result[0] = e.toString();
@@ -97,6 +118,13 @@ public class ScaffoldTreeGuiCheck {
 			fail(result[0]);
 		System.out.println("ScaffoldTreeGuiCheck passed");
 		System.exit(0);
+		}
+
+	private static int countNodes(DefaultMutableTreeNode node) {
+		int count = 1;
+		for (int i=0; i<node.getChildCount(); i++)
+			count += countNodes((DefaultMutableTreeNode)node.getChildAt(i));
+		return count;
 		}
 
 	private static int countSelected(CompoundTableModel tableModel) {
