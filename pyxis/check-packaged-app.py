@@ -27,14 +27,24 @@ macro.write_text(f'''<macro name="packaged-pyxis-check">
 <task name="openFile">
 fileName={(root / 'test_data/sar/SARTestWithEZ.dwar').as_posix()}
 </task>
-<task name="buildScaffoldTree">
-structureColumn=Structure
-minMolecules=1
+<task name="addRowNumbers">
+columnName=Check Value
+firstNumber=1
 </task>
-<task name="decomposeRGroups">
+<task name="sAROverview">
 structureColumn=Structure
-scaffoldMode=murcko
-useExistingColumns=false
+valueColumn=Check Value
+</task>
+<task name="waitSomeSeconds">
+seconds=3
+</task>
+<task name="createRGroupGrid">
+scaffoldColumn=Scaffold
+rowColumn=R1
+columnColumn=R2
+valueColumn=Check Value
+aggregate=mean
+order=frequency
 </task>
 <task name="waitSomeSeconds">
 seconds=3
@@ -93,6 +103,13 @@ if code != 0:
 log_text = (out / 'launcher.log').read_text(encoding='utf-8', errors='replace')
 if not re.search(r'Pyxis scaffold tree displayed: [1-9][0-9]* scaffolds', log_text):
     raise RuntimeError('No evidence that Build Scaffold Tree displayed a nonempty tree')
+# The fixture has no numerical column, so the macro adds row numbers as the value.
+# SAR Overview decomposes the R-groups and builds the tree; these lines are printed by the
+# tasks themselves, so they prove that the task names resolve inside the packaged program.
+if 'Pyxis SAR overview finished: ring scaffolds, value' not in log_text:
+    raise RuntimeError('No evidence that the sAROverview macro task ran to its end')
+if not re.search(r'Pyxis R-group grid displayed: [1-9][0-9]* x [1-9][0-9]*', log_text):
+    raise RuntimeError('No evidence that the createRGroupGrid macro task displayed a grid')
 with pairs.open(encoding='utf-8-sig', newline='') as stream:
     reader = csv.DictReader(stream)
     # DataWarrior annotates chemical columns with their exported encoding.
@@ -103,7 +120,7 @@ with pairs.open(encoding='utf-8-sig', newline='') as stream:
     rows = list(reader)
     if not rows or not all(row['Position'] and row['Scaffold'] for row in rows):
         raise RuntimeError('Substituent-pair export has no valid data rows')
-print(f'PASS: packaged Build Scaffold Tree displayed; Analyse Substituent Pairs exported {len(rows)} pairs')
+print(f'PASS: packaged SAR Overview built the scaffold tree, R-group grid displayed; Analyse Substituent Pairs exported {len(rows)} pairs')
 
 if args.document:
     print('PASS: .dwar launch argument loaded document and executed its embedded macro')

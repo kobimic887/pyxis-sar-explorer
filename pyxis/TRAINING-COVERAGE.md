@@ -20,7 +20,7 @@ they were not all manually retested in this change.
 | Export visible table to MS Word | Supported | File → Export → Visible Table to MS Word. DOCX with embedded PNG structures; caps of 1,000 rows, 30 columns, 10,000 cells; no heatmap/style reproduction. |
 | Numeric subsets, marking and table filtering | Supported | Existing numerical filters, selection and named row lists. Controls differ from the training text. |
 | Scaffold subset statistics | Supported | Pick a numeric column plus all/visible/list rows, then Refresh. Count includes missing values; mean/median use finite values. Statistics column/subset persist in the document; window controls are not macro recorded. |
-| Data grid with values and heatmap blocks | Partly | Existing Structure View grid with column labels and coloring. No new dedicated per-value heatmap-block controls matching the training workflow. |
+| Data grid with values and heatmap blocks | Supported as an R-group combination grid | Create R-Group Grid: two structure axes within one scaffold, selected numerical value and aggregation, counts, empty combinations, continuous heatmap, frequency/mean order, source selection and PNG/derived-table exports. Snapshot rather than an editable data table; no result parity claimed. |
 | R-Group table | Partly | New macro task creates a derived document for one decomposed scaffold, with R1..Rn, molecule, ID and selected values. Selection follows original record identity while the source is open; source scaffold-tree selection filters linked R-group tables. Edits stay independent; data are a snapshot and links do not survive reopening. Not an intrinsically read-only view. |
 | Scaffold-centric single-position substituent pairs | Supported | Existing pair analysis on decomposed R columns, optional values/difference/ratio. Output is a derived data snapshot with session-local selection links to both original molecules; no combined molecular difference drawing. |
 | Scaffold-hopping pairs | Supported | Same substituents, different scaffold mode. Ordered R-group keys must agree at every position, scaffold keys must differ. Requires consistent decomposition numbering; no positional remapping. Session-local pair selection selects both original molecules. |
@@ -29,6 +29,12 @@ they were not all manually retested in this change.
 | Dock/move views and use one to filter another | Supported for graph views | View popup → Show Only Rows Selected In Other Views restricts one 2D/3D view to the live selection without affecting other views. Tables and structure views cannot be restricted per view; they follow the shared filters. Session-only: after reopening, the restriction stays but stops following the selection. |
 
 ## Verification added
+
+- `SdfOverviewGuiCheck` (run by hand on the two supplied SD-files, which are not in the repository): the ordinary file import loads `Chembl_612285and6.sdf` (259 rows, 3 without structure; one stereo question, answered No) and `Amino Acids.sdf` (345 rows, no question); SAR Overview gives 95 scaffolds and 1,238 swaps for the first, and for the second 65 ring scaffolds with 109 ring-free molecules, or 303 decomposed molecules around a drawn amino-acid core.
+
+- `RGroupGridTest`: duplicate/missing/nonfinite values, hydrogen, all five aggregations, empty combinations, ordering and both axis/cell caps.
+- `RGroupGridGuiCheck`: built-app decomposition of five molecules; known cell mean 3/count 3 (two finite values), hydrogen mean 1/count 1, empty cell, exact mouse-click selection; PNG decode; three-cell table saved/reopened with every value and structure type compared; Word ZIP reread; source-close detach.
+
 
 - `SAROverviewGuiCheck`: built application; one overview run creates Scaffold/R columns, opens the tree with the chosen value selected for statistics and a swap summary document; the tree's Word report has one table row and one readable PNG per scaffold; a second run adds no columns.
 

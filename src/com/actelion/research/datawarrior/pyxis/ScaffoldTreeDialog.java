@@ -258,7 +258,7 @@ public class ScaffoldTreeDialog extends JDialog {
 		com.actelion.research.chem.Canonizer canon = new com.actelion.research.chem.Canonizer(fragment);
 		mTemplates.put(node, canon.getIDCode()+" "+canon.getEncodedCoordinates());
 		DefaultTreeModel tree = (DefaultTreeModel)mTree.getModel();
-		tree.insertNodeInto(createTreeNode(node), (DefaultMutableTreeNode)tree.getRoot(), ((DefaultMutableTreeNode)tree.getRoot()).getChildCount());
+		tree.insertNodeInto(createTreeNode(node), (DefaultMutableTreeNode)tree.getRoot(), 0);	// the user's own scaffolds lead the tree
 		refreshStatistics();
 		}
 

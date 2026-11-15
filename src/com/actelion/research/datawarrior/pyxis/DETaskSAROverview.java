@@ -24,7 +24,9 @@ import java.util.Properties;
  * Runs the usual first steps of an SAR analysis in one go on the open table:
  * R-group decomposition on the Murcko scaffold of every molecule (unless Scaffold and
  * R-group columns already exist), the scaffold tree with statistics of the chosen value,
- * and the substituent swap summary. Every step is one of the ordinary tasks, run with
+ * and the substituent swap summary. Collections without a common ring system, such as
+ * amino acids, can be analysed around a core the user draws: that core then defines the
+ * R-groups and is added to the tree as a user-defined scaffold. Every step is one of the ordinary tasks, run with
  * the settings a user would choose first; nothing here computes anything of its own.
  */
 public class DETaskSAROverview extends ConfigurableTask {
@@ -32,11 +34,15 @@ public class DETaskSAROverview extends ConfigurableTask {
 
 	private static final String PROPERTY_STRUCTURE_COLUMN = "structureColumn";
 	private static final String PROPERTY_VALUE_COLUMN = "valueColumn";
+	private static final String PROPERTY_CORE = "core";
 	private static final String ITEM_NONE = "<none>";
 
 	private final DEFrame mParentFrame;
 	private final CompoundTableModel mTableModel;
 	private JComboBox<String> mComboBoxStructure,mComboBoxValue;
+	private JCheckBox mCheckBoxCore;
+	private com.actelion.research.gui.JStructureView mCoreView;
+	private String mCore;	// idcode and coordinates of the drawn core; null if none
 
 	public DETaskSAROverview(DEFrame parent) {
 		super(parent, true);
@@ -67,9 +73,32 @@ public class DETaskSAROverview extends ConfigurableTask {
 	public JComponent createDialogContent() {
 		int gap = HiDPIHelper.scale(8);
 		double[][] size = { {gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, gap},
-							{gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, 2*gap, TableLayout.PREFERRED, gap} };
+							{gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, 2*gap, TableLayout.PREFERRED, gap,
+							 TableLayout.PREFERRED, gap/2, HiDPIHelper.scale(90), gap} };
 		JPanel content = new JPanel();
 		content.setLayout(new TableLayout(size));
+
+		mCheckBoxCore = new JCheckBox("Use my own core instead of ring scaffolds");
+		mCoreView = new com.actelion.research.gui.JStructureView();
+		mCoreView.setEnabled(false);
+		JButton buttonDraw = new JButton("Draw Core...");
+		buttonDraw.addActionListener(e -> {
+			com.actelion.research.chem.StereoMolecule mol = (mCore == null) ? new com.actelion.research.chem.StereoMolecule()
+					: new com.actelion.research.chem.IDCodeParser().getCompactMolecule(mCore);
+			mol.setFragment(true);
+			com.actelion.research.gui.editor.SwingEditorDialog editor = new com.actelion.research.gui.editor.SwingEditorDialog(mParentFrame, mol);
+			editor.setTitle("Draw the core that all molecules of interest share");
+			editor.setVisible(true);
+			if (!editor.isCancelled() && editor.getStructure().getAllAtoms() != 0) {
+				setCore(encodeCore(editor.getStructure()));
+				mCheckBoxCore.setSelected(true);
+				}
+			});
+		JPanel corePanel = new JPanel(new java.awt.BorderLayout(gap, 0));
+		corePanel.add(mCheckBoxCore, java.awt.BorderLayout.CENTER);
+		corePanel.add(buttonDraw, java.awt.BorderLayout.EAST);
+		content.add(corePanel, "1,7,3,7");
+		content.add(mCoreView, "1,9,3,9");
 
 		mComboBoxStructure = new JComboBox<>();
 		mComboBoxValue = new JComboBox<>();
@@ -95,11 +124,31 @@ public class DETaskSAROverview extends ConfigurableTask {
 		return content;
 		}
 
+	/** @return idcode and coordinates of a core, as a substructure fragment */
+	public static String encodeCore(com.actelion.research.chem.StereoMolecule core) {
+		com.actelion.research.chem.StereoMolecule fragment = core.getCompactCopy();
+		fragment.setFragment(true);
+		com.actelion.research.chem.Canonizer canonizer = new com.actelion.research.chem.Canonizer(fragment);
+		return canonizer.getIDCode()+" "+canonizer.getEncodedCoordinates();
+		}
+
+	private void setCore(String core) {
+		mCore = (core == null || core.trim().isEmpty()) ? null : core.trim();
+		if (mCore == null)
+			mCoreView.setIDCode(null);
+		else {
+			int space = mCore.indexOf(' ');
+			mCoreView.setIDCode(space == -1 ? mCore : mCore.substring(0, space), space == -1 ? null : mCore.substring(space+1));
+			}
+		}
+
 	@Override
 	public Properties getDialogConfiguration() {
 		Properties configuration = new Properties();
 		put(configuration, PROPERTY_STRUCTURE_COLUMN, mComboBoxStructure);
 		put(configuration, PROPERTY_VALUE_COLUMN, mComboBoxValue);
+		if (mCheckBoxCore.isSelected() && mCore != null)
+			configuration.setProperty(PROPERTY_CORE, mCore);
 		return configuration;
 		}
 
@@ -116,6 +165,8 @@ public class DETaskSAROverview extends ConfigurableTask {
 		setDialogConfigurationToDefault();
 		choose(mComboBoxStructure, configuration.getProperty(PROPERTY_STRUCTURE_COLUMN));
 		choose(mComboBoxValue, configuration.getProperty(PROPERTY_VALUE_COLUMN));
+		setCore(configuration.getProperty(PROPERTY_CORE));
+		mCheckBoxCore.setSelected(mCore != null);
 		}
 
 	private void choose(JComboBox<String> comboBox, String columnName) {
@@ -135,6 +186,8 @@ public class DETaskSAROverview extends ConfigurableTask {
 		else if (!isInteractive())
 			mComboBoxStructure.setSelectedItem("Structure");
 		mComboBoxValue.setSelectedItem(ITEM_NONE);
+		setCore(null);
+		mCheckBoxCore.setSelected(false);
 		}
 
 	@Override
@@ -143,6 +196,17 @@ public class DETaskSAROverview extends ConfigurableTask {
 		if (structure.isEmpty()) {
 			showErrorMessage("No structure column defined.");
 			return false;
+			}
+		String core = configuration.getProperty(PROPERTY_CORE);
+		if (core != null) {
+			try {
+				if (new com.actelion.research.chem.IDCodeParser().getCompactMolecule(core).getAllAtoms() == 0)
+					throw new IllegalArgumentException();
+				}
+			catch (Exception e) {
+				showErrorMessage("The core structure cannot be read.");
+				return false;
+				}
 			}
 		if (isLive) {
 			int column = mTableModel.findColumn(structure);
@@ -166,17 +230,23 @@ public class DETaskSAROverview extends ConfigurableTask {
 	public void runTask(Properties configuration) {
 		String structure = configuration.getProperty(PROPERTY_STRUCTURE_COLUMN);
 		String value = configuration.getProperty(PROPERTY_VALUE_COLUMN);
+		String core = configuration.getProperty(PROPERTY_CORE);
+		String coreIDCode = (core == null) ? null : core.split(" ")[0];
 
-		// 1. R-groups, unless the table already carries a decomposition
+		// 1. R-groups, unless the table already carries a decomposition.
+		//    A drawn core always decomposes again, because it asks a different question.
 		boolean hasRGroups = false;
 		for (int column=0; column<mTableModel.getTotalColumnCount(); column++)
 			hasRGroups |= mTableModel.isColumnTypeStructure(column) && mTableModel.getColumnTitleNoAlias(column).matches("R[0-9]+");
 		int scaffoldColumn = mTableModel.findColumn("Scaffold");
-		if (!hasRGroups || scaffoldColumn == -1 || !mTableModel.isColumnTypeStructure(scaffoldColumn)) {
+		boolean hasDecomposition = hasRGroups && scaffoldColumn != -1 && mTableModel.isColumnTypeStructure(scaffoldColumn);
+		if (!hasDecomposition || core != null) {
 			Properties decompose = new Properties();
 			decompose.setProperty("structureColumn", structure);
-			decompose.setProperty("scaffoldMode", "murcko");
-			decompose.setProperty("useExistingColumns", "false");
+			decompose.setProperty("scaffoldMode", core == null ? "murcko" : "custom");
+			if (core != null)
+				decompose.setProperty("scaffoldList", coreIDCode);
+			decompose.setProperty("useExistingColumns", hasDecomposition ? "true" : "false");
 			new DETaskDecomposeRGroups(mParentFrame).executeAsSubtask(decompose, getProgressController());
 			}
 		if (threadMustDie())
@@ -184,14 +254,28 @@ public class DETaskSAROverview extends ConfigurableTask {
 
 		// 2. scaffold tree; the tree window takes its statistics column from the project's
 		//    saved tree settings, which are only written here when the project has none yet
-		if (value != null && mTableModel.getExtensionData(ScaffoldSession.NAME) == null) {
+		Object existing = mTableModel.getExtensionData(ScaffoldSession.NAME);
+		if (existing == null && (value != null || core != null)) {
 			Properties session = new Properties();
 			session.setProperty("structureColumn", structure);
 			session.setProperty("minMolecules", "2");
-			session.setProperty("statisticsColumn", mTableModel.getColumnTitle(mTableModel.findColumn(value)));
+			session.setProperty("statisticsColumn", value == null ? "<count only>" : mTableModel.getColumnTitle(mTableModel.findColumn(value)));
 			session.setProperty("subset", "All rows");
-			session.setProperty("userScaffolds", "");
+			session.setProperty("userScaffolds", core == null ? "" : core);
 			mTableModel.setExtensionData(ScaffoldSession.NAME, session);
+			}
+		else if (existing instanceof Properties && core != null) {
+			// a saved tree configuration is kept; the drawn core is only added to its user scaffolds
+			Properties session = new Properties();
+			session.putAll((Properties)existing);
+			String saved = session.getProperty("userScaffolds", "");
+			boolean known = false;
+			for (String scaffold:saved.split("\t"))
+				known |= scaffold.split(" ")[0].equals(coreIDCode);
+			if (!known) {
+				session.setProperty("userScaffolds", saved.isEmpty() ? core : saved+"\t"+core);
+				mTableModel.setExtensionData(ScaffoldSession.NAME, session);
+				}
 			}
 		Properties tree = new Properties();
 		tree.setProperty("structureColumn", structure);
@@ -212,6 +296,9 @@ public class DETaskSAROverview extends ConfigurableTask {
 			new DETaskSummariseSubstituentSwaps(mParentFrame).executeAsSubtask(swaps, getProgressController());
 			SwingUtilities.invokeLater(() -> mParentFrame.toFront());	// keep the analysed table in front
 			}
+		// Macro/packaging checks can tell a finished overview from a skipped task.
+		System.out.println("Pyxis SAR overview finished: "+(core == null ? "ring scaffolds" : "drawn core")
+				+", value "+(value == null ? "none" : "'"+value+"'"));
 		}
 
 	/** @return true if at least one pair of molecules differs at exactly one R-group */

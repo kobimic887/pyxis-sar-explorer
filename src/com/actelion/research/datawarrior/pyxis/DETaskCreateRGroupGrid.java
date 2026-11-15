@@ -50,6 +50,8 @@ public class DETaskCreateRGroupGrid extends ConfigurableTask {
         }
         final String scaffoldKey=chosen;
         List<RGroupGrid.Input> input=new ArrayList<>();for(int r=0;r<model.getTotalRowCount();r++)if(scaffoldKey.equals(model.getTotalValueAt(r,scaffold))) input.add(new RGroupGrid.Input(model.getTotalValueAt(r,row),model.getTotalValueAt(r,column),model.getTotalOriginalDoubleAt(r,value),r));
-        try { if(input.isEmpty())throw new IllegalArgumentException("No molecules have the chosen scaffold."); RGroupGrid grid=new RGroupGrid(input,RGroupGrid.Aggregate.valueOf(p.getProperty("aggregate","mean")),"mean".equals(p.getProperty("order"))); SwingUtilities.invokeLater(()->new RGroupGridDialog((DEFrame)getParentFrame(),grid,p.getProperty("rowColumn"),p.getProperty("columnColumn"),p.getProperty("aggregate","mean")+" "+p.getProperty("valueColumn")).setVisible(true)); } catch(IllegalArgumentException e) {showErrorMessage(e.getMessage());}
+        try { if(input.isEmpty())throw new IllegalArgumentException("No molecules have the chosen scaffold."); RGroupGrid grid=new RGroupGrid(input,RGroupGrid.Aggregate.valueOf(p.getProperty("aggregate","mean")),"mean".equals(p.getProperty("order"))); SwingUtilities.invokeLater(()->{ new RGroupGridDialog((DEFrame)getParentFrame(),grid,p.getProperty("rowColumn"),p.getProperty("columnColumn"),p.getProperty("aggregate","mean")+" "+p.getProperty("valueColumn")).setVisible(true);
+                // Macro/packaging checks can tell a displayed grid from a skipped task.
+                System.out.println("Pyxis R-group grid displayed: "+grid.rows.size()+" x "+grid.columns.size()); }); } catch(IllegalArgumentException e) {showErrorMessage(e.getMessage());}
     }
 }

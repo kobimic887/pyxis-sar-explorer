@@ -16,6 +16,10 @@ The same tasks are also in the **Chemistry** menu and can be recorded in macros.
   settings one would choose first; the swap summary is left out when no two molecules
   differ at exactly one R-group or no value is chosen. An existing saved tree
   configuration is kept as it is.
+  Collections without a common ring system, such as amino acids, can be analysed around
+  a core you draw (*Use my own core*, *Draw Core...*): the core then defines the R-groups
+  for every molecule that contains it, and leads the tree as a user-defined scaffold.
+  A drawn core always decomposes again and replaces existing Scaffold and R-group columns.
 * **Build Scaffold Tree...** (`buildScaffoldTree`) opens a window with a hierarchical tree of
   the scaffolds of all molecules. Small scaffolds shared by many molecules are at the top,
   larger and rarer ones below them, each with its molecule count. Double click a scaffold
@@ -114,10 +118,19 @@ The same tasks are also in the **Chemistry** menu and can be recorded in macros.
   **Not yet tested against a live vault**; local HTTP mocks verify the transport/mapping.
 
 The [training workflow coverage](pyxis/TRAINING-COVERAGE.md) lists supported operations,
-partial equivalents, missing column locking and verification limits. Column locking
-remains unimplemented: a shared-model split-table probe exposed a visibility-bookkeeping
-exception, and the existing table/view event routing still needs adaptation. The new
-R-group combination grid and one-step cross-view filter are also still outstanding.
+partial equivalents and verification limits.
+
+* **Create R-Group Grid...** (`createRGroupGrid`, Chemistry/SAR) displays one decomposed
+  scaffold family as a structure-headed checkerboard. Choose two R positions, a numerical
+  column, mean/median/min/max/count and frequency or ascending-mean ordering. The most
+  frequent scaffold is the default. Cells show the value and molecule count; missing
+  values are excluded from numerical aggregation but included in counts. Empty groups
+  mean hydrogen; unobserved combinations say *Empty*. The continuous heatmap uses a log
+  scale for positive values spanning over 100-fold. Clicking selects original records
+  while the source is open. PNG export includes the full grid; Grid As New Table creates
+  one row per observed combination for saving or Word export. Values are snapshots.
+  Limits: 100 groups per axis, 2,500 cells, 25 million pixels per PNG.
+
 
 ### Pictures for a presentation
 `pyxis/demo/make-gallery.sh project.dwar output-directory value-column` runs the workflow

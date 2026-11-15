@@ -183,9 +183,21 @@ public class SwapSummaryGuiCheck {
 			if (!items.contains(wanted))
 				fail("SAR menu lacks '"+wanted+"'; it has "+items);
 
+		// every macro task code the README documents must resolve to its task
+		String[][] codes = {
+				{ "sAROverview", "DETaskSAROverview" }, { "buildScaffoldTree", "DETaskBuildScaffoldTree" },
+				{ "analyseSubstituentPairs", "DETaskAnalyseSubstituentPairs" }, { "summariseSubstituentSwaps", "DETaskSummariseSubstituentSwaps" },
+				{ "createRGroupTable", "DETaskCreateRGroupTable" }, { "createRGroupGrid", "DETaskCreateRGroupGrid" },
+				{ "exportVisibleTableToMSWord", "DETaskExportWord" } };
+		for (String[] code:codes) {
+			Object created = DataWarrior.getApplication().getTaskFactory().createTaskFromCode(source, code[0]);
+			if (created == null || !created.getClass().getSimpleName().equals(code[1]))
+				fail("macro task code '"+code[0]+"' gives "+(created == null ? "nothing" : created.getClass().getSimpleName())+", expected "+code[1]);
+			}
+
 		System.out.println("Swap summary GUI: "+model.getTotalRowCount()+" molecules -> "+result.getTotalRowCount()+" exchanges, "
 				+pooled+" pooled over 2 scaffolds; counts and mean change equal an independent recount; first exchange selects source rows "
-				+selected+"; SAR menu has "+items.size()+" entries");
+				+selected+"; SAR menu has "+items.size()+" entries; "+codes.length+" macro task codes resolve");
 		System.out.println("SwapSummaryGuiCheck passed");
 		System.exit(0);
 		}

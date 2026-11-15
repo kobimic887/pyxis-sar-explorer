@@ -138,8 +138,26 @@ public class SAROverviewGuiCheck {
 		if (model.getTotalColumnCount() != columnsBefore)
 			fail("a second run added columns: "+columnsBefore+" -> "+model.getTotalColumnCount());
 
+		// a drawn core replaces the ring scaffolds: only the three benzenes contain a benzene core
+		com.actelion.research.chem.StereoMolecule benzene = new com.actelion.research.chem.StereoMolecule();
+		new com.actelion.research.chem.SmilesParser().parse(benzene, "c1ccccc1");
+		Properties withCore = new Properties();
+		withCore.putAll(overview);
+		withCore.setProperty("core", DETaskSAROverview.encodeCore(benzene));
+		new DETaskSAROverview(source).executeAsSubtask(withCore, null);
+		settle();
+		int withCoreScaffold = 0;
+		for (int row=0; row<model.getTotalRowCount(); row++)
+			if (!model.getTotalValueAt(row, model.findColumn("Scaffold")).isEmpty())
+				withCoreScaffold++;
+		if (withCoreScaffold != 3)
+			fail("drawn benzene core: "+withCoreScaffold+" rows decomposed, expected the 3 benzenes");
+		Object session = model.getExtensionData(com.actelion.research.datawarrior.pyxis.ScaffoldSession.NAME);
+		if (!(session instanceof Properties) || ((Properties)session).getProperty("userScaffolds", "").isEmpty())
+			fail("drawn core was not added to the project's tree scaffolds");
+
 		System.out.println("SAR overview: "+model.getTotalRowCount()+" molecules -> R-groups, tree with Ki statistics, "
-				+swaps.getTableModel().getTotalRowCount()+" swaps; Word report with "+reported[0]+" scaffolds and pictures; second run reuses the decomposition");
+				+swaps.getTableModel().getTotalRowCount()+" swaps; Word report with "+reported[0]+" scaffolds and pictures; second run reuses the decomposition; a drawn benzene core decomposes exactly the 3 benzenes");
 		System.out.println("SAROverviewGuiCheck passed");
 		System.exit(0);
 		}

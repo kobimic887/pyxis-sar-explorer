@@ -110,7 +110,7 @@ public class ScaffoldTreeGuiCheck {
 					});
 				accept.setRepeats(false); accept.start(); edit.doClick();
 				DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
-				ScaffoldHierarchy.Node custom = (ScaffoldHierarchy.Node)((DefaultMutableTreeNode)root.getLastChild()).getUserObject();
+				ScaffoldHierarchy.Node custom = (ScaffoldHierarchy.Node)((DefaultMutableTreeNode)root.getFirstChild()).getUserObject();
 				if (!custom.isUserDefined() || custom.getMemberCount() < family) throw new AssertionError("user scaffold membership");
 
 				// 'Tree As New Table' must open a document with one row per scaffold of the tree
