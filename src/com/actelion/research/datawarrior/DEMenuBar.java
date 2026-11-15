@@ -629,7 +629,7 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuFile.add(jMenuFileOpenSpecial);
 		addResourceFileMenus(jMenuFile);
 		jMenuHelpMoreData = new JMenuItem();
-		jMenuHelpMoreData.setText("Download More Data...");
+		jMenuHelpMoreData.setText("Download Data (upstream DataWarrior)...");
 		jMenuHelpMoreData.addActionListener(this);
 		jMenuFile.addSeparator();
 		jMenuFile.add(jMenuHelpMoreData);
@@ -1382,7 +1382,7 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 
 	protected JMenu buildHelpMenu() {
 		jMenuHelpNews = new JMenu();
-		jMenuHelpNews.setText("Recent News");
+		jMenuHelpNews.setText("DataWarrior News (upstream project)");
 
 		jMenuHelpLaF = new JMenu();
 		jMenuHelpLaF.setText("Look & Feel");
@@ -1438,9 +1438,13 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuHelp.add(jMenuHelpNews);
 
 		jMenuHelpForum = new JMenuItem();
-		jMenuHelpForum.setText("Open Forum in Browser...");
+		jMenuHelpForum.setText("DataWarrior Forum (upstream project)...");
 		jMenuHelpForum.addActionListener(this);
 		jMenuHelp.add(jMenuHelpForum);
+        JMenuItem pyxisIssues = new JMenuItem("Pyxis SAR Explorer Issues and Support...");
+        pyxisIssues.addActionListener(e -> BrowserControl.displayURL(
+                "https://github.com/kobimic887/pyxis-sar-explorer/issues"));
+        jMenuHelp.add(pyxisIssues);
 
 		jMenuHelp.addSeparator();
 		jMenuHelp.add(jMenuHelpLaF);
@@ -1464,7 +1468,7 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		boolean isSkipped = "true".equals(System.getProperty("skipUpdates"))
 						 || !"true".equals(System.getProperty("pyxisFollowUpstreamUpdates"));	// see DEUpdateHandler
 
-		jMenuHelpUpdate.setText("Update Mode");
+		jMenuHelpUpdate.setText("DataWarrior Update Mode (upstream; disabled by default)");
 		for (int i=0; i<DEUpdateHandler.PREFERENCES_UPDATE_MODE_CODE.length; i++) {
 			JCheckBoxMenuItem item = new JCheckBoxMenuItem();
 			item.setText(DEUpdateHandler.PREFERENCES_UPDATE_MODE_TEXT[i]);
