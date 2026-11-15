@@ -241,12 +241,30 @@ public class DETaskSAROverview extends ConfigurableTask {
 		int scaffoldColumn = mTableModel.findColumn("Scaffold");
 		boolean hasDecomposition = hasRGroups && scaffoldColumn != -1 && mTableModel.isColumnTypeStructure(scaffoldColumn);
 		if (!hasDecomposition || core != null) {
+			// An earlier decomposition is removed first. Reusing its columns would leave the old
+			// scaffold and R-groups standing in every row that does not contain the new core,
+			// and pairs, swaps and grids would then mix two different decompositions.
+			if (core != null) {
+				StringBuilder old = new StringBuilder();
+				for (int column=0; column<mTableModel.getTotalColumnCount(); column++) {
+					String title = mTableModel.getColumnTitleNoAlias(column);
+					if (mTableModel.isColumnTypeStructure(column) && (title.equals("Scaffold") || title.matches("R[0-9]+")))
+						old.append(old.length() == 0 ? "" : "\t").append(title);
+					}
+				if (old.length() != 0) {
+					Properties delete = new Properties();
+					delete.setProperty("columnList", old.toString());
+					com.actelion.research.datawarrior.task.AbstractTask deleteTask =
+							mParentFrame.getApplication().getTaskFactory().createTaskFromCode(mParentFrame, "deleteColumns");
+					deleteTask.executeAsSubtask(delete, getProgressController());
+					}
+				}
 			Properties decompose = new Properties();
 			decompose.setProperty("structureColumn", structure);
 			decompose.setProperty("scaffoldMode", core == null ? "murcko" : "custom");
 			if (core != null)
 				decompose.setProperty("scaffoldList", coreIDCode);
-			decompose.setProperty("useExistingColumns", hasDecomposition ? "true" : "false");
+			decompose.setProperty("useExistingColumns", "false");
 			new DETaskDecomposeRGroups(mParentFrame).executeAsSubtask(decompose, getProgressController());
 			}
 		if (threadMustDie())

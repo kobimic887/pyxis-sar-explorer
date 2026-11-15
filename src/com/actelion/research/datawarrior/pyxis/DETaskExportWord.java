@@ -14,7 +14,7 @@ import java.util.*;
 import java.util.List;
 
 public class DETaskExportWord extends ConfigurableTask {
-    public static final String TASK_NAME="Export Visible Table to MS Word";
+    public static final String TASK_NAME="Export Visible Table To MS Word";
     private final DEFrame frame;
     private JTextField filename;
     public DETaskExportWord(DEFrame parent) { super(parent,true); frame=parent; }

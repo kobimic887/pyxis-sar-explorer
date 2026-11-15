@@ -188,7 +188,8 @@ public class SwapSummaryGuiCheck {
 				{ "sAROverview", "DETaskSAROverview" }, { "buildScaffoldTree", "DETaskBuildScaffoldTree" },
 				{ "analyseSubstituentPairs", "DETaskAnalyseSubstituentPairs" }, { "summariseSubstituentSwaps", "DETaskSummariseSubstituentSwaps" },
 				{ "createRGroupTable", "DETaskCreateRGroupTable" }, { "createRGroupGrid", "DETaskCreateRGroupGrid" },
-				{ "exportVisibleTableToMSWord", "DETaskExportWord" } };
+				{ "exportVisibleTableToMSWord", "DETaskExportWord" }, { "importCDDVaultMolecules", "DETaskImportCddVault" },
+				{ "reorientScaffoldFamily", "DETaskOrientScaffold" } };
 		for (String[] code:codes) {
 			Object created = DataWarrior.getApplication().getTaskFactory().createTaskFromCode(source, code[0]);
 			if (created == null || !created.getClass().getSimpleName().equals(code[1]))

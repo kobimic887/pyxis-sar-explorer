@@ -19,7 +19,8 @@ The same tasks are also in the **Chemistry** menu and can be recorded in macros.
   Collections without a common ring system, such as amino acids, can be analysed around
   a core you draw (*Use my own core*, *Draw Core...*): the core then defines the R-groups
   for every molecule that contains it, and leads the tree as a user-defined scaffold.
-  A drawn core always decomposes again and replaces existing Scaffold and R-group columns.
+  A drawn core always decomposes again; the existing Scaffold and R-group columns are
+  deleted first, so molecules without the core end up with no scaffold and no R-groups.
 * **Build Scaffold Tree...** (`buildScaffoldTree`) opens a window with a hierarchical tree of
   the scaffolds of all molecules. Small scaffolds shared by many molecules are at the top,
   larger and rarer ones below them, each with its molecule count. Double click a scaffold
