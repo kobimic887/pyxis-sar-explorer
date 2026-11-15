@@ -14,10 +14,12 @@ out.mkdir(exist_ok=True)
 macro = out / 'tasks.dwam'
 pairs = out / 'pairs.csv'
 pairs.unlink(missing_ok=True)
+# SARTestWithEZ has a real single-position pair; simpleSAR only differs at multiple positions.
+# Neither fixture starts with Scaffold/R-group columns.
 # Path.as_posix() gives native Windows drive paths with forward slashes, including spaces.
 macro.write_text(f'''<macro name="packaged-pyxis-check">
 <task name="openFile">
-fileName={(root / 'test_data/sar/simpleSAR.dwar').as_posix()}
+fileName={(root / 'test_data/sar/SARTestWithEZ.dwar').as_posix()}
 </task>
 <task name="buildScaffoldTree">
 structureColumn=Structure
@@ -72,6 +74,8 @@ if not re.search(r'Pyxis scaffold tree displayed: [1-9][0-9]* scaffolds', log_te
     raise RuntimeError('No evidence that Build Scaffold Tree displayed a nonempty tree')
 with pairs.open(encoding='utf-8-sig', newline='') as stream:
     reader = csv.DictReader(stream)
+    # DataWarrior annotates chemical columns with their exported encoding.
+    reader.fieldnames = [name.removesuffix(' [idcode]') for name in (reader.fieldnames or [])]
     required = {'Molecule A', 'Molecule B', 'Scaffold', 'Position', 'Substituent A', 'Substituent B'}
     if not required.issubset(reader.fieldnames or []):
         raise RuntimeError(f'Export is not a substituent-pair table: {reader.fieldnames}')
