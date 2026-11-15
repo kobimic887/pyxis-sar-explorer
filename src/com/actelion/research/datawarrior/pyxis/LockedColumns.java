@@ -234,7 +234,17 @@ public class LockedColumns {
 				Rectangle visible = mTable.getVisibleRect();
 				mTable.scrollRectToVisible(new Rectangle(0, visible.y, 1, visible.height));
 				}
+			// Selecting a cell makes a table scroll that cell into view. For a locked cell that
+			// would throw the table back to its left end although the cell is on screen here,
+			// so the horizontal position is put back. Starting to edit is the exception above.
+			boolean keepPosition = !(mTarget == mTable && e.getClickCount() == 2);
+			java.awt.Point before = mScrollPane.getViewport().getViewPosition();
 			mTarget.dispatchEvent(new StripEvent(mTarget, e, getX()));
+			if (keepPosition) {
+				java.awt.Point after = mScrollPane.getViewport().getViewPosition();
+				if (after.x != before.x)
+					mScrollPane.getViewport().setViewPosition(new java.awt.Point(before.x, after.y));
+				}
 			setCursor(mTarget.getCursor());
 			e.consume();
 			}

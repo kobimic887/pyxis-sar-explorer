@@ -55,8 +55,15 @@ jobs:
           jar --update --file datawarrior_all.jar -C version-resources resources/pyxis-version.txt
           java -Djava.awt.headless=true -cp datawarrior_all.jar pyxis/RenderAbout.java about-pyxis.png "${{ steps.version.outputs.version }}"
 
-      - name: Scaffold tree and R-group grid GUI checks
-        run: xvfb-run -a pyxis/run-gui-check.sh test_data/sar/SARTestWithEZ.dwar scaffold-tree.png
+      - name: GUI checks against the built application
+        # These drive real windows and wait for events. One of the older checks has failed
+        # once on a runner from timing alone and passed unchanged on the re-run, so a single
+        # retry is allowed; a real fault fails both times.
+        run: |
+          xvfb-run -a pyxis/run-gui-check.sh test_data/sar/SARTestWithEZ.dwar scaffold-tree.png || {
+            echo "::warning::GUI checks failed once; retrying"
+            xvfb-run -a pyxis/run-gui-check.sh test_data/sar/SARTestWithEZ.dwar scaffold-tree.png
+          }
 
       - uses: actions/upload-artifact@v4
         with:

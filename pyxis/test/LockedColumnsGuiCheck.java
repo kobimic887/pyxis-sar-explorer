@@ -139,10 +139,55 @@ public class LockedColumnsGuiCheck {
 			});
 		settle();
 		expect("click on the strip selects that row", selectedRow[0], 3);
+		final int[] xAfterClick = new int[1];
+		onEDT(() -> xAfterClick[0] = sView.getViewport().getViewPosition().x);
+		expect("a click on a locked cell must not scroll the table back to the left", xAfterClick[0], viewX[0]);
+		if (!LockedColumns.isShowing(sView))
+			fail("locked columns vanished after a click on them");
 		if (sLastTableEvent == null || LockedColumns.popupShift(sLastTableEvent) != viewX[0])
 			fail("the table did not receive the strip click with the popup offset "+viewX[0]);
 		if (sTable.columnAtPoint(sLastTableEvent.getPoint()) != 0)
 			fail("strip click was not delivered to the first column");
+
+		// saving a project collects every view's state; that must work while columns are locked
+		onEDT(() -> new com.actelion.research.datawarrior.DERuntimeProperties(sFrame.getMainFrame()).learn());
+
+		// a right click on the header strip opens the column menu where the user clicked,
+		// and that menu offers to unlock
+		final String[] popupProblem = new String[1];
+		onEDT(() -> {
+			long now = System.currentTimeMillis();
+			headerStrip.dispatchEvent(new MouseEvent(headerStrip, MouseEvent.MOUSE_PRESSED, now, InputEvent.BUTTON3_DOWN_MASK,
+					12, headerStrip.getHeight()/2, 1, true, MouseEvent.BUTTON3));
+			});
+		settle();
+		onEDT(() -> {
+			javax.swing.MenuElement[] path = javax.swing.MenuSelectionManager.defaultManager().getSelectedPath();
+			if (path.length == 0 || !(path[0] instanceof javax.swing.JPopupMenu)) {
+				popupProblem[0] = "no popup menu opened from the locked header";
+				return;
+				}
+			javax.swing.JPopupMenu popup = (javax.swing.JPopupMenu)path[0];
+			if (!popup.isShowing() || !headerStrip.isShowing()) {
+				popupProblem[0] = "the column menu was created but is not showing (popup "+popup.isShowing()+", strip "+headerStrip.isShowing()+")";
+				javax.swing.MenuSelectionManager.defaultManager().clearSelectedPath();
+				return;
+				}
+			boolean hasUnlock = false;
+			for (java.awt.Component c:popup.getComponents())
+				if (c instanceof javax.swing.JMenuItem && "Unlock Columns".equals(((javax.swing.JMenuItem)c).getText()))
+					hasUnlock = true;
+			int expectedX = headerStrip.getLocationOnScreen().x + 12;
+			int actualX = popup.getLocationOnScreen().x;
+			if (!hasUnlock)
+				popupProblem[0] = "the column menu opened from the strip lacks 'Unlock Columns'";
+			else if (Math.abs(actualX - expectedX) > 4)
+				popupProblem[0] = "column menu opened at x="+actualX+", the click was at x="+expectedX;
+			javax.swing.MenuSelectionManager.defaultManager().clearSelectedPath();
+			});
+		if (popupProblem[0] != null)
+			fail(popupProblem[0]);
+		settle();
 
 		// a click on the header strip sorts by that column
 		int sortsBefore = sSortEvents;
@@ -193,7 +238,7 @@ public class LockedColumnsGuiCheck {
 			fail("after unlocking, the left edge still shows the first two columns");
 
 		System.out.println("Locked columns: 2 columns, "+lockedWidth[0]+" px, table scrolled by "+viewX[0]
-				+" px; strip pixel-identical to the real columns; row click, header sort, resize, left end and unlock behave");
+				+" px; strip pixel-identical to the real columns; row click, header menu at the click, view state for saving, header sort, resize, left end and unlock behave");
 		System.out.println("LockedColumnsGuiCheck passed");
 		System.exit(0);
 		}

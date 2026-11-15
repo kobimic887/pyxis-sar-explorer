@@ -3,7 +3,7 @@
  * workflow on it and saves pictures of the resulting windows. Nothing here is a check;
  * it only shows what the application displays for a given project.
  *
- * Usage: pyxis/demo/make-gallery.sh project.dwar output-directory value-column
+ * Usage: pyxis/demo/make-gallery.sh project.dwar output-directory value-column [light]
  * GNU General Public License v3 or later, WITHOUT ANY WARRANTY.
  */
 
@@ -56,6 +56,10 @@ public class DemoGallery {
 		if (source == null)
 			throw new IllegalStateException("project did not open");
 		Thread.sleep(2000);
+		if (args.length > 3 && args[3].equals("light")) {	// default is the dark Graphite look
+			SwingUtilities.invokeAndWait(() -> DataWarrior.getApplication().setLookAndFeel(DataWarrior.LookAndFeel.NEBULA));
+			Thread.sleep(1500);
+			}
 		final DEFrame frame = source;
 		final CompoundTableModel model = frame.getTableModel();
 		if (model.findColumn(valueColumn) == -1)
