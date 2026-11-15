@@ -73,14 +73,40 @@ partial equivalents, missing column locking and verification limits.
   from it, because that would replace it with an unmodified DataWarrior.
 
 ### Installers
-`.github/workflows/pyxis-build.yml` builds the application and makes installers for
-Windows (.msi), macOS (.dmg) and Linux (.deb) with a bundled Java runtime. A tag named
-`pyxis-v1.2.3` publishes them as a GitHub release. They are not code-signed. CI also launches the bundled application image on Windows
-and Linux with an absolute-path macro. It requires a displayed, nonempty scaffold tree,
-a nonempty exported substituent-pair table, and a clean exit within 150 seconds.
-The installers wrap that same tested application image. The `packaged-evidence-*`
-artifacts retain the macro, launcher log, CSV and runtime architecture. macOS skips
-this macro check because its entry point does not handle command-line file arguments.
+`.github/workflows/pyxis-build.yml` builds installers with a bundled Java runtime:
+Windows x64 (`.msi`), Linux x64 (`.deb`), and separate macOS Apple Silicon arm64
+and Intel x64 (`.dmg`) downloads. Choose the DMG matching your Mac's processor;
+the architecture is included in its filename. Non-tag builds use `1.0.<run number>`;
+About Pyxis SAR Explorer shows that version and the build date.
+
+**These installers are unsigned.** Windows may show an unknown-publisher UAC prompt
+and Microsoft Defender SmartScreen's **Windows protected your PC** warning. For a
+build you trust, choose **More info > Run anyway** if offered. On macOS, Gatekeeper
+may block first launch because the developer cannot be verified. Copy the app from
+the DMG to Applications, then **right-click > Open** and confirm. On macOS versions
+that require it, use **System Settings > Privacy & Security > Open Anyway** after
+the blocked launch. No signing certificates are included in this project.
+
+The installed app registers `.dwar` documents, `.dwam` macros and `.dwat` templates.
+An existing installation of DataWarrior or another handler may retain the user's
+chosen default; choose Pyxis SAR Explorer in the OS's **Open with** control if needed.
+Only open macros/documents from trusted sources: documents may contain autostart macros.
+
+CI tests both app images and real installations. Windows silently installs the MSI
+in Program Files, runs the installed EXE, and uninstalls it. Linux installs the DEB,
+runs its installed launcher under Xvfb, and removes it. Both must load a `.dwar`
+launch argument, display a nonempty scaffold tree, export a nonempty substituent-pair
+CSV, and exit cleanly. CI also checks the installed file-association registrations.
+macOS mounts each DMG, copies its `.app`, launches it, and requires a visible window
+title containing **Pyxis SAR Explorer**. **macOS Finder file-open delivery and macro
+execution are not proved by this check**: its entry point uses Desktop open-file
+events rather than command-line file arguments.
+
+The `packaged-evidence-<type>-<architecture>` artifacts retain launcher/installer logs,
+macros, document fixtures, CSVs, window-query evidence, and runtime architecture.
+The `application-jar` artifact includes an in-process rendering of the actual About
+panel. A `pyxis-v1.2.3` tag can publish installers as a GitHub release; ordinary
+branch pushes only create workflow artifacts.
 
 ### Checking a change
 ```
