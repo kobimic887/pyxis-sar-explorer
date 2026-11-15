@@ -26,6 +26,7 @@ import java.util.List;
 
 public class ScaffoldTreeGuiCheck {
 	public static void main(String[] args) throws Exception {
+		Thread.setDefaultUncaughtExceptionHandler((thread, error) -> { error.printStackTrace(); System.exit(1); });
 		DataWarriorLinux.main(new String[] { args[0] });
 
 		ScaffoldTreeDialog dialog = null;
@@ -191,6 +192,25 @@ public class ScaffoldTreeGuiCheck {
 		derived.setTotalValueAt("999",0,derived.findColumn("Ki"));
 		if (!"2".equals(table.getTotalValueAt(0,3))) fail("derived copy changed source");
 		System.out.println("R-group GUI/task: 2 matching rows, structures and Ki copied; source unchanged by derived edits");
+		java.nio.file.Path word = java.nio.file.Path.of(System.getProperty("java.io.tmpdir"), "pyxis-visible-table-"+System.nanoTime()+".docx");
+		SwingUtilities.invokeAndWait(() -> {
+			input.getMainFrame().getMainPane().getTableView().setColumnVisibility(table.findColumn("R2"), false);
+			int flag=table.getUnusedRowFlag(true);
+			table.getTotalRecord(1).setFlag(flag);
+			table.updateExternalExclusion(flag,false,true);
+			});
+		com.actelion.research.datawarrior.pyxis.DETaskExportWord.export(input,word);
+		javax.xml.parsers.DocumentBuilderFactory factory=javax.xml.parsers.DocumentBuilderFactory.newInstance(); factory.setNamespaceAware(true);
+		try (java.util.zip.ZipFile zip=new java.util.zip.ZipFile(word.toFile())) {
+			var document=factory.newDocumentBuilder().parse(zip.getInputStream(zip.getEntry("word/document.xml")));
+			String ns="http://schemas.openxmlformats.org/wordprocessingml/2006/main";
+			int rowCount=document.getElementsByTagNameNS(ns,"tr").getLength();
+			int cells=document.getElementsByTagNameNS(ns,"tc").getLength();
+			long images=zip.stream().filter(e -> e.getName().endsWith(".png")).count();
+			if (rowCount!=3 || cells!=12 || images!=6 || document.getDocumentElement().getTextContent().contains("R2")) fail("visible Word snapshot: rows="+rowCount+" cells="+cells+" images="+images);
+		}
+		System.out.println("Visible Word snapshot: 2 filtered rows x 4 displayed columns, 6 PNG structures; "+word);
+
 		}
 
 	private static int countNodes(DefaultMutableTreeNode node) {

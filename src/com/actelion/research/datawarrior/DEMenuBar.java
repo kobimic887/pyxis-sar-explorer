@@ -573,6 +573,9 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuFileSaveVisibleAs.setText("Visible Rows As...");
 		jMenuFileSaveVisibleAs.addActionListener(this);
 		jMenuFileExport.setText("Export");
+		JMenuItem word = new JMenuItem("Visible Table to MS Word...");
+		word.addActionListener(e -> new com.actelion.research.datawarrior.pyxis.DETaskExportWord(mParentFrame).defineAndRun());
+		jMenuFileExport.add(word);
 		jMenuFileExportTXT.setText("TAB-Delimited Textfile...");
 		jMenuFileExportTXT.addActionListener(this);
 		jMenuFileExportCSV.setText("Comma-Separated Textfile...");

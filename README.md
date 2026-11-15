@@ -46,6 +46,13 @@ The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
   modify the source and it does not refresh from the source. This reuses the existing
   decomposition rather than computing a second, potentially inconsistent one.
 
+* **File → Export → Visible Table to MS Word...** (`exportVisibleTableToMSWord`)
+  writes a new `.docx` containing visible rows and displayed columns in their current
+  order, with structures rendered as PNG images. This is a plain landscape table,
+  not a copy of heatmaps or interactive views. Export is capped at 1,000 data rows,
+  30 columns and 10,000 cells; filter/hide columns for larger datasets. It uses Java's
+  ZIP writer and Office Open XML, with no new dependency. Existing files are refused.
+
 ### What Pyxis changed
 * Window titles and the About text name the program Pyxis SAR Explorer.
 * The program does not contact the DataWarrior update server and does not update itself
