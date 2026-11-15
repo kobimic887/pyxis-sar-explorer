@@ -16,6 +16,12 @@ public class ScaffoldHierarchyTest {
 	private static int sFailures;
 
 	public static void main(String[] args) throws Exception {
+		java.util.BitSet family = new java.util.BitSet(); family.set(0, 5);
+		java.util.BitSet subset = new java.util.BitSet(); subset.set(1, 5);
+		double[] stats = ScaffoldHierarchy.statistics(family, subset, new double[] {100, 2, 4, Double.NaN, Double.POSITIVE_INFINITY});
+		if (!java.util.Arrays.equals(stats, new double[] {4, 2, 3, 3})) throw new AssertionError("subset statistics");
+		if (!Double.isNaN(ScaffoldHierarchy.statistics(family, new java.util.BitSet(), new double[5])[2])) throw new AssertionError("empty subset");
+
 		testScaffoldIdentity();
 		testKnownTree();
 		testCentralRingIsNotRemoved();

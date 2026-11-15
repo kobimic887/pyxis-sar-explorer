@@ -81,6 +81,23 @@ public class ScaffoldHierarchy {
 			}
 		}
 
+	/** Snapshot statistics: subset count includes missing values; mean/median use finite values only. */
+	public static double[] statistics(BitSet family, BitSet subset, double[] values) {
+		BitSet rows = (BitSet)family.clone();
+		rows.and(subset);
+		double[] finite = new double[rows.cardinality()];
+		int n = 0;
+		double mean = 0;
+		for (int r=rows.nextSetBit(0); r>=0; r=rows.nextSetBit(r+1))
+			if (Double.isFinite(values[r])) {
+				finite[n++] = values[r];
+				mean = mean * ((n-1.0)/n) + values[r]/n;
+				}
+		Arrays.sort(finite, 0, n);
+		double median = n == 0 ? Double.NaN : n%2 == 1 ? finite[n/2] : finite[n/2-1]/2 + finite[n/2]/2;
+		return new double[] { rows.cardinality(), n, n == 0 ? Double.NaN : mean, median };
+		}
+
 	private static final Comparator<Node> DISPLAY_ORDER = (a, b) -> {
 		int c = Integer.compare(b.getMemberCount(), a.getMemberCount());
 		if (c == 0)

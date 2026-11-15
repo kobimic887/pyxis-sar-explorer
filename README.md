@@ -17,6 +17,10 @@ Both are in the **Chemistry** menu and can be recorded in macros.
   parents of a scaffold are obtained by removing one ring at a time, as long as the rest
   stays connected; a scaffold is shown below the parent that covers the most molecules.
   Ring-free molecules have no scaffold and are reported separately.
+  Choose a numerical column and all rows, visible rows or a row list, then press Refresh
+  for a subset snapshot: family count, finite value count, mean and median. Missing and
+  infinite values do not enter mean/median. Tree As New Table includes the snapshot;
+  refresh again after filters/data change. These window controls are not macro recorded.
 * **Analyse Substituent Pairs...** (`analyseSubstituentPairs`) lists all pairs of molecules
   that share a scaffold and differ at exactly one R-group position, with both values of a
   chosen numerical column, their difference and their ratio. Run *Decompose R-Groups...*

@@ -42,6 +42,9 @@ public class ScaffoldTreeDialog extends JDialog {
 	private final JTree mTree;
 	private final JCheckBox mCheckBoxExactOnly;
 	private final JLabel mLabelStatus;
+	private final JComboBox<String> mValue = new JComboBox<>();
+	private final JComboBox<String> mSubset = new JComboBox<>();
+	private final java.util.Map<Node,double[]> mStatistics = new java.util.IdentityHashMap<>();
 
 	public ScaffoldTreeDialog(DEFrame parent, ScaffoldHierarchy hierarchy, CompoundRecord[] record,
 							  String structureColumnName, int minMembers, int emptyRows) {
@@ -80,6 +83,22 @@ public class ScaffoldTreeDialog extends JDialog {
 		JButton buttonTable = new JButton("Tree As New Table");
 		buttonTable.addActionListener(e -> createTable());
 
+		mValue.addItem("<count only>");
+		CompoundTableModel source = parent.getTableModel();
+		for (int c=0; c<source.getTotalColumnCount(); c++)
+			if (source.isColumnTypeDouble(c)) mValue.addItem(source.getColumnTitle(c));
+		mSubset.addItem("All rows");
+		mSubset.addItem("Visible rows only");
+		for (int i=0; i<source.getListHandler().getListCount(); i++)
+			mSubset.addItem("List: "+source.getListHandler().getListName(i));
+		JPanel statistics = new JPanel(new FlowLayout(FlowLayout.LEFT));
+		statistics.add(new JLabel("Statistics:"));
+		statistics.add(mValue);
+		statistics.add(mSubset);
+		JButton refresh = new JButton("Refresh");
+		refresh.addActionListener(e -> refreshStatistics());
+		statistics.add(refresh);
+
 		int shown = hierarchy.getNodesInDisplayOrder().size();
 		int withScaffold = hierarchy.getRowCount() - hierarchy.getRowsWithoutScaffold().cardinality();
 		StringBuilder summary = new StringBuilder();
@@ -102,7 +121,7 @@ public class ScaffoldTreeDialog extends JDialog {
 		JPanel south = new JPanel();
 		south.setLayout(new BoxLayout(south, BoxLayout.Y_AXIS));
 		south.setBorder(BorderFactory.createEmptyBorder(gap, gap, gap, gap));
-		for (JComponent c:new JComponent[] { mCheckBoxExactOnly, buttons, mLabelStatus }) {
+		for (JComponent c:new JComponent[] { statistics, mCheckBoxExactOnly, buttons, mLabelStatus }) {
 			c.setAlignmentX(Component.LEFT_ALIGNMENT);
 			south.add(c);
 			south.add(Box.createVerticalStrut(gap/2));
@@ -119,6 +138,30 @@ public class ScaffoldTreeDialog extends JDialog {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setSize(HiDPIHelper.scale(640), HiDPIHelper.scale(720));
 		setLocationRelativeTo(parent);
+		}
+
+	private void refreshStatistics() {
+		CompoundTableModel model = mParentFrame.getTableModel();
+		java.util.IdentityHashMap<CompoundRecord,Integer> present = new java.util.IdentityHashMap<>();
+		for (int r=0; r<model.getTotalRowCount(); r++) present.put(model.getTotalRecord(r), r);
+		BitSet subset = new BitSet();
+		double[] values = new double[mRecord.length];
+		java.util.Arrays.fill(values, Double.NaN);
+		int column = mValue.getSelectedIndex() == 0 ? -1 : model.findColumn((String)mValue.getSelectedItem());
+		String choice = (String)mSubset.getSelectedItem();
+		int list = choice.startsWith("List: ") ? model.getListHandler().getListIndex(choice.substring(6)) : -1;
+		for (int r=0; r<mRecord.length; r++) {
+			Integer current = present.get(mRecord[r]);
+			if (current == null) continue;
+			boolean include = choice.equals("All rows") || choice.equals("Visible rows only") && model.isVisible(mRecord[r])
+				|| list >= 0 && mRecord[r].isFlagSet(model.getListHandler().getListFlagNo(list));
+			if (include) subset.set(r);
+			if (column >= 0) values[r] = model.getTotalOriginalDoubleAt(current, column);
+			}
+		for (Node node:mHierarchy.getNodesInDisplayOrder())
+			mStatistics.put(node, ScaffoldHierarchy.statistics(node.getMembers(), subset, values));
+		mTree.repaint();
+		mLabelStatus.setText("Snapshot: "+choice+"; "+mValue.getSelectedItem()+". Refresh after changing filters or data. Finite values only.");
 		}
 
 	private DefaultMutableTreeNode createTreeNode(Node node) {
@@ -171,7 +214,7 @@ public class ScaffoldTreeDialog extends JDialog {
 	/** Writes the displayed tree into a new document, so that it can be saved and exported. */
 	private void createTable() {
 		List<Node> nodes = mHierarchy.getNodesInDisplayOrder();
-		String[] title = { "Scaffold", "Parent Scaffold", "Level", "Rings", "Molecules", "Molecules With Exactly This Scaffold" };
+		String[] title = { "Scaffold", "Parent Scaffold", "Level", "Rings", "Molecules", "Molecules With Exactly This Scaffold", "Subset Count", "Finite Values", "Mean", "Median" };
 
 		DEFrame frame = DataWarrior.getApplication().getEmptyFrame("Scaffold Tree of "+mParentFrame.getTitle());
 		CompoundTableModel tableModel = frame.getTableModel();
@@ -189,12 +232,15 @@ public class ScaffoldTreeDialog extends JDialog {
 			tableModel.setTotalValueAt(Integer.toString(node.getRingCount()), row, 3);
 			tableModel.setTotalValueAt(Integer.toString(node.getMemberCount()), row, 4);
 			tableModel.setTotalValueAt(Integer.toString(node.getExactMemberCount()), row, 5);
+			double[] stats = mStatistics.get(node);
+			if (stats != null)
+				for (int i=0; i<4; i++) tableModel.setTotalValueAt(Double.isFinite(stats[i]) ? Double.toString(stats[i]) : "", row, 6+i);
 			}
 		tableModel.finalizeTable(CompoundTableEvent.cSpecifierDefaultFiltersAndViews, null);
 		}
 
 	/** Draws the scaffold structure with its molecule counts below. */
-	private static class ScaffoldRenderer extends JPanel implements TreeCellRenderer {
+	private class ScaffoldRenderer extends JPanel implements TreeCellRenderer {
 		private final JStructureView mStructureView = new JStructureView();
 		private final JLabel mLabel = new JLabel();
 
@@ -208,7 +254,7 @@ public class ScaffoldTreeDialog extends JDialog {
 			mLabel.setFont(mLabel.getFont().deriveFont(mLabel.getFont().getSize2D()*0.9f));
 			add(mStructureView, BorderLayout.CENTER);
 			add(mLabel, BorderLayout.SOUTH);
-			setPreferredSize(new Dimension(HiDPIHelper.scale(200), HiDPIHelper.scale(82)));
+			setPreferredSize(new Dimension(HiDPIHelper.scale(440), HiDPIHelper.scale(82)));
 			}
 
 		@Override
@@ -221,6 +267,8 @@ public class ScaffoldTreeDialog extends JDialog {
 				String text = node.getMemberCount()+(node.getMemberCount() == 1 ? " molecule" : " molecules");
 				if (node.getExactMemberCount() != node.getMemberCount())
 					text += " ("+node.getExactMemberCount()+" exact)";
+				double[] stats = mStatistics.get(node);
+				if (stats != null) text += " | subset "+(int)stats[0]+"; mean "+stats[2]+"; median "+stats[3];
 				mLabel.setText(text);
 				}
 			// The structure view paints its own background, so the chosen scaffold is framed

@@ -47,8 +47,10 @@ public class ScaffoldTreeGuiCheck {
 				JTree tree = null;
 				JButton select = null;
 				JButton asTable = null;
+				JButton refresh = null;
 				JCheckBox exact = null;
 				for (Component c:all) {
+					if (c instanceof JButton && "Refresh".equals(((JButton)c).getText())) refresh = (JButton)c;
 					if (c instanceof JTree) tree = (JTree)c;
 					if (c instanceof JButton && "Select Molecules".equals(((JButton)c).getText())) select = (JButton)c;
 					if (c instanceof JButton && "Tree As New Table".equals(((JButton)c).getText())) asTable = (JButton)c;
@@ -69,6 +71,8 @@ public class ScaffoldTreeGuiCheck {
 				ScaffoldHierarchy.Node node = (ScaffoldHierarchy.Node)
 						((DefaultMutableTreeNode)tree.getPathForRow(0).getLastPathComponent()).getUserObject();
 
+				if (refresh == null) throw new AssertionError("Refresh missing");
+				refresh.doClick();
 				select.doClick();
 				int family = countSelected(tableModel);
 				exact.setSelected(true);
@@ -90,6 +94,7 @@ public class ScaffoldTreeGuiCheck {
 					if (frame != d.getOwner() && frame.getTableModel().getTotalRowCount() != 0)
 						treeTable = frame.getTableModel();
 				if (result[0] == null) {
+					if (treeTable != null && !Double.toString(node.getMemberCount()).equals(treeTable.getTotalValueAt(0, treeTable.findColumn("Subset Count")))) throw new AssertionError("subset count export");
 					if (treeTable == null)
 						result[0] = "'Tree As New Table' did not open a filled document";
 					else if (treeTable.getTotalRowCount() != scaffolds)
