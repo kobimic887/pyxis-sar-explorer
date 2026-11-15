@@ -308,7 +308,13 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 				}
 			}
 
-		target.finalizeTable(CompoundTableEvent.cSpecifierDefaultFiltersAndViews, getProgressController());
+		java.util.IdentityHashMap<com.actelion.research.table.model.CompoundRecord,com.actelion.research.table.model.CompoundRecord[]> links = new java.util.IdentityHashMap<>();
+        for (int i=0;i<pairs.size();i++) {
+            SubstituentPairs.Pair pair=pairs.get(i);
+            links.put(target.getTotalRecord(i),new com.actelion.research.table.model.CompoundRecord[]{mTableModel.getTotalRecord(pair.rowA),mTableModel.getTotalRecord(pair.rowB)});
+        }
+        target.finalizeTable(CompoundTableEvent.cSpecifierDefaultFiltersAndViews, getProgressController());
+        SwingUtilities.invokeLater(() -> SourceRowLink.attach((DEFrame)getParentFrame(),frame,links,false));
 
 		if (analysis.isTruncated())
 			showInteractiveTaskMessage("More than "+MAX_PAIRS+" pairs exist. Only the first "+MAX_PAIRS+" are listed.\n"

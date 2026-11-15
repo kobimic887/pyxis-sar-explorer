@@ -63,7 +63,7 @@ jobs:
           name: application-jar
           path: |
             datawarrior_all.jar
-            scaffold-tree.png
+            scaffold-tree*.png
             about-pyxis.png
           retention-days: 14
 

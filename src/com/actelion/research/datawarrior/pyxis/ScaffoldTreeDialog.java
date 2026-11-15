@@ -65,6 +65,12 @@ public class ScaffoldTreeDialog extends JDialog {
 
 		mTree = new JTree(new DefaultTreeModel(root));
 		mTree.setRootVisible(false);
+        mTree.addTreeSelectionListener(e -> {
+            Node node=chosenNode();
+            java.util.Set<CompoundRecord> members=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            if (node!=null) for (int r=node.getMembers().nextSetBit(0);r>=0;r=node.getMembers().nextSetBit(r+1)) members.add(mRecord[r]);
+            SourceRowLink.filter(mParentFrame,node==null ? null : members);
+        });
 		mTree.setShowsRootHandles(true);
 		mTree.setRowHeight(HiDPIHelper.scale(84));
 		mTree.setCellRenderer(new ScaffoldRenderer());
@@ -169,7 +175,10 @@ public class ScaffoldTreeDialog extends JDialog {
 		refreshStatistics();
 		mValue.addActionListener(e -> saveSession());
 		mSubset.addActionListener(e -> saveSession());
-		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override public void windowClosed(java.awt.event.WindowEvent e) { SourceRowLink.filter(mParentFrame, null); }
+        });
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setSize(HiDPIHelper.scale(640), HiDPIHelper.scale(720));
 		setLocationRelativeTo(parent);
 		}

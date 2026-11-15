@@ -64,7 +64,7 @@ public class DETaskCreateRGroupTable extends ConfigurableTask {
         values.setVisibleRowCount(5);
         JScrollPane scroll=new JScrollPane(values); scroll.setPreferredSize(new Dimension(260,100));
         addRow(panel,4,"Value columns (multiple selection):",scroll);
-        addRow(panel,5,"Derived copy:",new JLabel("Edits never update the source."));
+        addRow(panel,5,"Derived copy:",new JLabel("Selection links to source; edits stay here. Links end on close."));
         return panel;
     }
     @Override public Properties getDialogConfiguration() {
@@ -111,7 +111,8 @@ public class DETaskCreateRGroupTable extends ConfigurableTask {
         List<Integer> columns = new ArrayList<>(); columns.add(core); columns.addAll(rColumns()); columns.add(molecule);
         int idColumn=source.findColumn(p.getProperty("idColumn","")); columns.add(idColumn);
         for (String name:p.getProperty("valueColumns", "").split("\t")) if (!name.isEmpty()) columns.add(source.findColumn(name));
-        CompoundTableModel target=getEmptyFrame("R-Group Table (derived copy) of "+getParentFrame().getTitle()).getTableModel();
+        DEFrame frame=getEmptyFrame("R-Group Table (derived copy) of "+getParentFrame().getTitle());
+        CompoundTableModel target=frame.getTableModel();
         target.initializeTable(rows.size(), columns.size());
         for (int c=0; c<columns.size(); c++) {
             int original=columns.get(c);
@@ -119,6 +120,9 @@ public class DETaskCreateRGroupTable extends ConfigurableTask {
             if (original>=0 && source.isColumnTypeStructure(original)) target.setColumnProperty(c,CompoundTableModel.cColumnPropertySpecialType,CompoundTableModel.cColumnTypeIDCode);
             for (int r=0; r<rows.size(); r++) target.setTotalValueAt(original<0 ? Integer.toString(rows.get(r)+1) : source.getTotalValueAt(rows.get(r),original),r,c);
         }
+        IdentityHashMap<CompoundRecord,CompoundRecord[]> links=new IdentityHashMap<>();
+        for (int r=0;r<rows.size();r++) links.put(target.getTotalRecord(r),new CompoundRecord[]{source.getTotalRecord(rows.get(r))});
         target.finalizeTable(CompoundTableEvent.cSpecifierDefaultFiltersAndViews,getProgressController());
+        SwingUtilities.invokeLater(() -> SourceRowLink.attach((DEFrame)getParentFrame(),frame,links,true));
     }
 }

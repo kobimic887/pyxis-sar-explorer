@@ -26,7 +26,11 @@ import java.util.List;
 
 public class ScaffoldTreeGuiCheck {
 	private static String picturePrefix;
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) {
+        try { runCheck(args); }
+        catch (Throwable failure) { failure.printStackTrace(); System.exit(1); }
+    }
+    private static void runCheck(String[] args) throws Exception {
 		picturePrefix = args[1].replaceFirst("\\.png$", "");
 		Thread.setDefaultUncaughtExceptionHandler((thread, error) -> { error.printStackTrace(); System.exit(1); });
 		DataWarriorLinux.main(new String[] { args[0] });
@@ -168,11 +172,26 @@ public class ScaffoldTreeGuiCheck {
 		System.exit(0);
 		}
 
+    private static String treeSignature(JTree tree) {
+        List<String> nodes=new ArrayList<>();
+        java.util.Enumeration<?> all=((DefaultMutableTreeNode)tree.getModel().getRoot()).preorderEnumeration();
+        while(all.hasMoreElements()) {
+            Object value=((DefaultMutableTreeNode)all.nextElement()).getUserObject();
+            if(value instanceof ScaffoldHierarchy.Node) {
+                ScaffoldHierarchy.Node n=(ScaffoldHierarchy.Node)value;
+                nodes.add(n.getIDCode()+"|"+n.getMemberCount()+"|"+n.getExactMemberCount()+"|"+n.isUserDefined());
+            }
+        }
+        java.util.Collections.sort(nodes); return nodes.toString();
+    }
+
     private static void checkPersistence(DEFrame source) throws Exception {
         String name = com.actelion.research.datawarrior.pyxis.ScaffoldSession.NAME;
+        String[] expectedTree={null};
         SwingUtilities.invokeAndWait(() -> {
             for (Window w:Window.getWindows()) if (w instanceof ScaffoldTreeDialog && w.getOwner()==source) {
                 List<Component> controls=new ArrayList<>(); collect((Container)w,controls);
+                for (Component c:controls) if (c instanceof JTree) expectedTree[0]=treeSignature((JTree)c);
                 for (Component c:controls) if (c instanceof JComboBox) {
                     JComboBox<?> box=(JComboBox<?>)c;
                     if (box.getItemCount()>1) box.setSelectedIndex(1);
@@ -202,6 +221,7 @@ public class ScaffoldTreeGuiCheck {
             for (Window w:Window.getWindows()) if (w instanceof ScaffoldTreeDialog && w.getOwner()==reopened) {
                 List<Component> controls = new ArrayList<>(); collect((Container)w, controls);
                 for (Component c:controls) if (c instanceof JTree) {
+                    if (!treeSignature((JTree)c).equals(expectedTree[0])) throw new AssertionError("reopened tree membership differs");
                     DefaultMutableTreeNode root=(DefaultMutableTreeNode)((JTree)c).getModel().getRoot();
                     boolean user=false;
                     for (int n=0;n<root.getChildCount();n++) if (((ScaffoldHierarchy.Node)((DefaultMutableTreeNode)root.getChildAt(n)).getUserObject()).isUserDefined()) user=true;
@@ -313,6 +333,58 @@ public class ScaffoldTreeGuiCheck {
 			stats.dispose();
 		});
 		System.out.println("Statistics GUI snapshots: all rows count 2/mean 4/median 4; visible count 1/value 2; row-list count 1/value 6");
+        CompoundTableModel pairOutput=output, rOutput=derived;
+        SwingUtilities.invokeAndWait(() -> {
+            // Drive a real scaffold tree selection, rather than calling just the filter helper.
+            ScaffoldHierarchy linkedHierarchy=new ScaffoldHierarchy();
+            com.actelion.research.table.model.CompoundRecord[] linkedRecords=new com.actelion.research.table.model.CompoundRecord[3];
+            for(int r=0;r<3;r++) { linkedRecords[r]=table.getTotalRecord(r); linkedHierarchy.addRow(r,table.getTotalValueAt(r,0)); }
+            linkedHierarchy.build(1);
+            ScaffoldTreeDialog linkedTree=new ScaffoldTreeDialog(input,linkedHierarchy,linkedRecords,"Structure",1,0);
+            linkedTree.setVisible(true);
+            List<Component> linkedControls=new ArrayList<>(); collect(linkedTree.getContentPane(),linkedControls);
+            for(Component control:linkedControls) if(control instanceof JTree) {
+                JTree tree=(JTree)control;
+                for(int r=0;r<tree.getRowCount();r++) {
+                    ScaffoldHierarchy.Node n=(ScaffoldHierarchy.Node)((DefaultMutableTreeNode)tree.getPathForRow(r).getLastPathComponent()).getUserObject();
+                    if(b.equals(n.getIDCode())) { tree.setSelectionRow(r); if(rOutput.getRowCount()!=0) throw new AssertionError("tree selection did not filter R-group table"); }
+                }
+                tree.clearSelection(); if(rOutput.getRowCount()!=2) throw new AssertionError("tree clear did not restore rows");
+            }
+            linkedTree.dispose();
+            // Select after source/target sorts. Original records, including duplicate structures, stay distinct.
+            com.actelion.research.table.model.CompoundRecord[] originals={table.getTotalRecord(0),table.getTotalRecord(1),table.getTotalRecord(2)};
+            table.sort(3,true,false); rOutput.sort(rOutput.findColumn("Ki"),true,false);
+            int chosenIndex="1".equals(rOutput.getTotalValueAt(0,rOutput.findColumn("Source Row ID"))) ? 0 : 1;
+            com.actelion.research.table.model.CompoundRecord chosen=rOutput.getTotalRecord(chosenIndex);
+            com.actelion.research.table.model.CompoundRecord expected=originals[0];
+            chosen.setSelection(true); rOutput.invalidateSelectionModel();
+            if (countSelected(table)!=1 || !expected.isSelected()) throw new AssertionError("R-group stable selection after sorting");
+            chosen.setSelection(false); rOutput.invalidateSelectionModel();
+            pairOutput.getTotalRecord(0).setSelection(true); pairOutput.invalidateSelectionModel();
+            if (countSelected(table)!=2) throw new AssertionError("pair selection must select both source rows");
+            java.util.Set<com.actelion.research.table.model.CompoundRecord> members=java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+            members.add(table.getTotalRecord(0));
+            com.actelion.research.datawarrior.pyxis.SourceRowLink.filter(input,members);
+            if (rOutput.getRowCount()!=1) throw new AssertionError("scaffold family filter");
+            com.actelion.research.datawarrior.pyxis.SourceRowLink.filter(input,null);
+            if (rOutput.getRowCount()!=2) throw new AssertionError("clear scaffold family filter");
+            // Delete one selected source record. A later selection must not shift onto a neighbour.
+            for (int r=0;r<table.getTotalRowCount();r++) table.getTotalRecord(r).setSelection(false);
+            expected.setSelection(true); table.removeSelected();
+            chosen.setSelection(true); rOutput.invalidateSelectionModel();
+            if (countSelected(table)!=0) throw new AssertionError("deleted record redirected selection");
+            try {
+                for (DEFrame frame:DataWarrior.getApplication().getFrameList()) if (frame.getTableModel()==rOutput) {
+                    BufferedImage image=new BufferedImage(frame.getWidth(),frame.getHeight(),BufferedImage.TYPE_INT_RGB); Graphics2D g=image.createGraphics(); frame.paint(g); g.dispose(); ImageIO.write(image,"png",new File(picturePrefix+"-linked-table.png"));
+                }
+            } catch(Exception e) { throw new RuntimeException(e); }
+            input.dispose();
+            pairOutput.getTotalRecord(0).setSelection(false); pairOutput.invalidateSelectionModel();
+            if (rOutput.getRowCount()!=2) throw new AssertionError("source close left exclusion");
+        });
+        System.out.println("Source links GUI: sorted duplicate molecules remain distinct; pair selects both originals; family filter/clear; deleted source ignored; source close detaches");
+
 
 
 		}

@@ -39,6 +39,7 @@ The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
   hydrogen is a distinct key. It does not infer equivalent attachment positions or
   align independently numbered decompositions. Use a consistently numbered decomposition
   with the same R positions; a missing position is not inferred from an empty cell.
+  Selecting a pair selects both original molecules while the source stays open.
   Values compare original numerical data, not log-display coordinates. Both modes
   consider all rows, including filtered rows, and cap output at 200,000 pairs.
 
@@ -46,7 +47,11 @@ The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
   decomposed scaffold into a new document: Scaffold, numbered R-group columns, molecule,
   chosen ID (or source row number), and selected value columns. Run Decompose R-Groups
   first. This is a **derived copy**, named in the window title: edits there do not
-  modify the source and it does not refresh from the source. This reuses the existing
+  modify the source and it does not refresh data from the source. Selection is live-linked
+  to the original records while both documents are open, including after sorting.
+  Selecting a scaffold in the source tree filters linked R-group tables; clear the
+  tree selection to remove that filter. Closing either window detaches its links.
+  Links are session-local and are not restored by saving the derived document. This reuses the existing
   decomposition rather than computing a second, potentially inconsistent one.
 
 * **File → Export → Visible Table to MS Word...** (`exportVisibleTableToMSWord`)
