@@ -87,6 +87,45 @@ jobs:
           name: application-jar
           path: app-input
 
+      - name: Record runtime architecture
+        shell: bash
+        run: |
+          echo "Runner architecture: $RUNNER_ARCH"
+          java -XshowSettings:properties -version 2>&1 | tee runtime-architecture.txt
+
+      - name: Make application image
+        shell: bash
+        run: |
+          rm -f app-input/scaffold-tree.png
+          jpackage --type app-image \
+            --name "$APP_NAME" \
+            --app-version "${{ needs.build.outputs.version }}" \
+            --vendor "Pyxis Discovery" \
+            --input app-input \
+            --main-jar datawarrior_all.jar \
+            --main-class "$MAIN_CLASS" \
+            --java-options "$JAVA_OPTIONS" \
+            --add-modules "$MODULES" \
+            --dest app-image
+
+      - name: Run packaged Pyxis tasks (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a python3 pyxis/check-packaged-app.py "app-image/$APP_NAME/bin/$APP_NAME"
+
+      - name: Run packaged Pyxis tasks (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python pyxis/check-packaged-app.py "app-image/$APP_NAME/$APP_NAME.exe"
+
+      - name: Packaged launch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: packaged-evidence-${{ matrix.type }}
+          path: |
+            packaged-check/
+            runtime-architecture.txt
+
       - name: Make installer
         shell: bash
         run: |
@@ -98,11 +137,7 @@ jobs:
             --description "Scaffold and SAR analysis. A modified version of DataWarrior (GPL v3)." \
             --copyright "DataWarrior (C) Thomas Sander and Idorsia Pharmaceuticals Ltd.; Pyxis additions (C) Pyxis Discovery. GNU GPL v3." \
             --license-file LICENSE \
-            --input app-input \
-            --main-jar datawarrior_all.jar \
-            --main-class "$MAIN_CLASS" \
-            --java-options "$JAVA_OPTIONS" \
-            --add-modules "$MODULES" \
+            --app-image "app-image/$APP_NAME${{ runner.os == 'macOS' && '.app' || '' }}" \
             --dest installers \
             ${{ matrix.extra }}
           ls -l installers

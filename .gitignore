@@ -1,3 +1,9 @@
 datawarrior_all.jar
 datawarriorlauncher.jar
 bin/
+
+# Local packaged-launch checks
+/app-image/
+/installers/
+/packaged-check/
+/pyxis/__pycache__/

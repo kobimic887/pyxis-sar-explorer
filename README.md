@@ -30,7 +30,12 @@ Both are in the **Chemistry** menu and can be recorded in macros.
 ### Installers
 `.github/workflows/pyxis-build.yml` builds the application and makes installers for
 Windows (.msi), macOS (.dmg) and Linux (.deb) with a bundled Java runtime. A tag named
-`pyxis-v1.2.3` publishes them as a GitHub release. They are not code-signed.
+`pyxis-v1.2.3` publishes them as a GitHub release. They are not code-signed. CI also launches the bundled application image on Windows
+and Linux with an absolute-path macro. It requires a displayed, nonempty scaffold tree,
+a nonempty exported substituent-pair table, and a clean exit within 150 seconds.
+The installers wrap that same tested application image. The `packaged-evidence-*`
+artifacts retain the macro, launcher log, CSV and runtime architecture. macOS skips
+this macro check because its entry point does not handle command-line file arguments.
 
 ### Checking a change
 ```

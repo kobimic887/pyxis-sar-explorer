@@ -198,26 +198,12 @@ for (String arg:args) {
 }
 */
 
-		// On Windows Liberica 21 moved libraries from jre\bin\javafx to jre\bin. These dlls are wrongly accessed via the old path.
-		// If not found there, then the jre tries to find them using the java.library.path runtime variable.
-		// For things to work correctly, java.library.path should start with "C:\\Program Files\\DataWarrior\\jre\\bin;".
-		// If DataWarrior on Windows is started using the putjar/bootstrap mechanism, then java.library.path should start
-		// with "C:\\Program Files\\DataWarrior;" If an older JRE is installed, this variable contains another path causing
-		// to load outdated libraries...
-		// (On Macintosh and Linux this doesn't seem to be an issue.)
+		// Liberica's JavaFX DLLs live in the running runtime's bin directory.
+		// jpackage bundles it under runtime/, not upstream's fixed DataWarrior/jre/.
 		if (Platform.isWindows()) {
-			final String jrePath = "C:\\Program Files\\DataWarrior\\jre\\bin;";
-			String currentPath = System.getProperty("java.library.path");
-			if (!currentPath.startsWith(jrePath)) {
-//				System.out.println("Old java.library.path: " + currentPath);
-				int index = currentPath.indexOf(jrePath);
-				if (index != -1)
-					currentPath = currentPath.substring(0, index).concat(currentPath.substring(index + jrePath.length()));
-
-				System.setProperty("java.library.path", jrePath+currentPath);
-				System.out.println("Added missing '"+jrePath+"' to JRE property 'java.library.path'.");
-//				System.out.println("New java.library.path: " + System.getProperty("java.library.path"));
-				}
+			String runtimeBin = new java.io.File(System.getProperty("java.home"), "bin").getAbsolutePath();
+			String currentPath = System.getProperty("java.library.path", "");
+			System.setProperty("java.library.path", runtimeBin + java.io.File.pathSeparator + currentPath);
 			}
 
 		SwingUtilities.invokeLater(() -> {

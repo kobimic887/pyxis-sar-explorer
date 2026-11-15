@@ -180,7 +180,10 @@ public class DETaskBuildScaffoldTree extends ConfigurableTask {
 
 		final int emptyRows = emptyCount;
 		final String structureColumnName = mTableModel.getColumnTitle(structureColumn);
-		SwingUtilities.invokeLater(() ->
-			new ScaffoldTreeDialog(mParentFrame, hierarchy, record, structureColumnName, minMembers, emptyRows).setVisible(true));
+		SwingUtilities.invokeLater(() -> {
+			new ScaffoldTreeDialog(mParentFrame, hierarchy, record, structureColumnName, minMembers, emptyRows).setVisible(true);
+			// Macro/packaging checks can distinguish a displayed tree from a skipped task.
+			System.out.println("Pyxis scaffold tree displayed: " + hierarchy.getNodesInDisplayOrder().size() + " scaffolds");
+			});
 		}
 	}
