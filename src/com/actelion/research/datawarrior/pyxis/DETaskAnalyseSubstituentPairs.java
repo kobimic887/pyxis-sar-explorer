@@ -37,6 +37,7 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 	private static final int MAX_PAIRS = 200000;
 
 	private final CompoundTableModel mTableModel;
+	private JComboBox<String> mMode;
 	private JComboBox<String> mComboBoxScaffold,mComboBoxValue,mComboBoxID;
 
 	public DETaskAnalyseSubstituentPairs(DEFrame parent) {
@@ -84,7 +85,7 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 	public JComponent createDialogContent() {
 		int gap = HiDPIHelper.scale(8);
 		double[][] size = { {gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, gap},
-							{gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, 2*gap, TableLayout.PREFERRED, gap} };
+							{gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, gap, TableLayout.PREFERRED, gap} };
 		JPanel content = new JPanel();
 		content.setLayout(new TableLayout(size));
 
@@ -114,14 +115,18 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 		content.add(mComboBoxValue, "3,3");
 		content.add(new JLabel("Molecule name or ID column:"), "1,5");
 		content.add(mComboBoxID, "3,5");
+		mMode = new JComboBox<>(new String[] {"Same scaffold, one changed R group", "Same substituents, different scaffold"});
+		content.add(new JLabel("Pair mode:"), "1,7");
+		content.add(mMode, "3,7");
 		content.add(new JLabel("<html>Creates a new table with all pairs of molecules that have the same<br>"
-				+ "scaffold and differ at exactly one of the R-group columns R1, R2, ...</html>"), "1,7,3,7");
+				+ "scaffold and differ at exactly one of the R-group columns R1, R2, ...</html>"), "1,9,3,9");
 		return content;
 		}
 
 	@Override
 	public Properties getDialogConfiguration() {
 		Properties configuration = new Properties();
+		configuration.setProperty("mode", mMode.getSelectedIndex() == 1 ? "hopping" : "substituent");
 		setIfChosen(configuration, PROPERTY_SCAFFOLD_COLUMN, mComboBoxScaffold);
 		setIfChosen(configuration, PROPERTY_VALUE_COLUMN, mComboBoxValue);
 		setIfChosen(configuration, PROPERTY_ID_COLUMN, mComboBoxID);
@@ -139,6 +144,7 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 	@Override
 	public void setDialogConfiguration(Properties configuration) {
 		setDialogConfigurationToDefault();
+		mMode.setSelectedIndex("hopping".equals(configuration.getProperty("mode")) ? 1 : 0);
 		choose(mComboBoxScaffold, configuration.getProperty(PROPERTY_SCAFFOLD_COLUMN));
 		choose(mComboBoxValue, configuration.getProperty(PROPERTY_VALUE_COLUMN));
 		choose(mComboBoxID, configuration.getProperty(PROPERTY_ID_COLUMN));
@@ -156,6 +162,7 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 
 	@Override
 	public void setDialogConfigurationToDefault() {
+		mMode.setSelectedIndex(0);
 		int scaffoldColumn = mTableModel.findColumn("Scaffold");
 		if (scaffoldColumn != -1 && mTableModel.isColumnTypeStructure(scaffoldColumn))
 			mComboBoxScaffold.setSelectedItem(mTableModel.getColumnTitle(scaffoldColumn));
@@ -203,6 +210,7 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 
 	@Override
 	public void runTask(Properties configuration) {
+		boolean hopping = "hopping".equals(configuration.getProperty("mode"));
 		int scaffoldColumn = mTableModel.findColumn(configuration.getProperty(PROPERTY_SCAFFOLD_COLUMN));
 		String valueName = configuration.getProperty(PROPERTY_VALUE_COLUMN);
 		String idName = configuration.getProperty(PROPERTY_ID_COLUMN);
@@ -232,12 +240,12 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 			}
 
 		startProgress("Finding pairs...", 0, 0);
-		SubstituentPairs analysis = new SubstituentPairs(scaffold, substituent, MAX_PAIRS);
+		SubstituentPairs analysis = new SubstituentPairs(scaffold, substituent, MAX_PAIRS, hopping);
 		List<SubstituentPairs.Pair> pairs = analysis.getPairs();
 		if (threadMustDie())
 			return;
 		if (pairs.isEmpty()) {
-			showErrorMessage("No two molecules share a scaffold and differ at exactly one R-group.");
+			showErrorMessage("No pairs found for the selected mode.");
 			return;
 			}
 
@@ -247,10 +255,10 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 			colStructureA = title.size();	title.add("Molecule A");
 			colStructureB = title.size();	title.add("Molecule B");
 			}
-		int colScaffold = title.size();	title.add("Scaffold");
+		int colScaffold = title.size();	title.add(hopping ? "Scaffold A" : "Scaffold");
 		int colPosition = title.size();	title.add("Position");
-		int colGroupA = title.size();	title.add("Substituent A");
-		int colGroupB = title.size();	title.add("Substituent B");
+		int colGroupA = title.size();	title.add(hopping ? "Scaffold B" : "Substituent A");
+		int colGroupB = title.size();	title.add(hopping ? "Compared R positions" : "Substituent B");
 		if (idColumn != -1) {
 			colIDA = title.size();	title.add(mTableModel.getColumnTitle(idColumn)+" A");
 			colIDB = title.size();	title.add(mTableModel.getColumnTitle(idColumn)+" B");
@@ -264,13 +272,13 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 			title.add(name+" Ratio (B / A)");
 			}
 
-		DEFrame frame = getEmptyFrame("Substituent Pairs of "+getParentFrame().getTitle());
+		DEFrame frame = getEmptyFrame((hopping ? "Scaffold Hopping Pairs of " : "Substituent Pairs of ")+getParentFrame().getTitle());
 		CompoundTableModel target = frame.getTableModel();
 		target.initializeTable(pairs.size(), title.size());
 		for (int column=0; column<title.size(); column++)
 			target.setColumnName(title.get(column), column);
 		for (int column:new int[] { colStructureA, colStructureB, colScaffold, colGroupA, colGroupB })
-			if (column != -1)
+			if (column != -1 && !(hopping && column == colGroupB))
 				target.setColumnProperty(column, CompoundTableModel.cColumnPropertySpecialType, CompoundTableModel.cColumnTypeIDCode);
 
 		startProgress("Creating pair table...", 0, pairs.size());
@@ -283,9 +291,9 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 				target.setTotalValueAt(mTableModel.getTotalValueAt(pair.rowB, structureColumn), i, colStructureB);
 				}
 			target.setTotalValueAt(scaffold[pair.rowA], i, colScaffold);
-			target.setTotalValueAt(mTableModel.getColumnTitleNoAlias(rGroupColumn[pair.position]), i, colPosition);
-			target.setTotalValueAt(substituent[pair.rowA][pair.position], i, colGroupA);
-			target.setTotalValueAt(substituent[pair.rowB][pair.position], i, colGroupB);
+			target.setTotalValueAt(hopping ? "Scaffold" : mTableModel.getColumnTitleNoAlias(rGroupColumn[pair.position]), i, colPosition);
+			target.setTotalValueAt((hopping ? scaffold[pair.rowB] : substituent[pair.rowA][pair.position]), i, colGroupA);
+			target.setTotalValueAt((hopping ? Integer.toString(rGroupColumn.length) : substituent[pair.rowB][pair.position]), i, colGroupB);
 			if (idColumn != -1) {
 				target.setTotalValueAt(mTableModel.getTotalValueAt(pair.rowA, idColumn), i, colIDA);
 				target.setTotalValueAt(mTableModel.getTotalValueAt(pair.rowB, idColumn), i, colIDB);

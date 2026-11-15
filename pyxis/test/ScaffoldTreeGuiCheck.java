@@ -143,8 +143,42 @@ public class ScaffoldTreeGuiCheck {
 		int coordinates = model.getChildColumn(structure, CompoundTableModel.cColumnType2DCoordinates);
 		if (coordinates < 0 || model.getTotalValueAt(0, coordinates).isEmpty()) fail("orientation did not write coordinates");
 		System.out.println("User scaffold added/exported; template orientation preserved all "+original.length+" molecule identities");
+		checkPairTask();
 		System.out.println("ScaffoldTreeGuiCheck passed");
 		System.exit(0);
+		}
+
+	private static void checkPairTask() throws Exception {
+		DEFrame input = DataWarrior.getApplication().getEmptyFrame("Hopping fixture");
+		CompoundTableModel table = input.getTableModel();
+		table.initializeTable(3, 4);
+		String[] titles = {"Scaffold", "R1", "R2", "Ki"};
+		for (int c=0; c<4; c++) table.setColumnName(titles[c], c);
+		for (int c=0; c<3; c++) table.setColumnProperty(c, CompoundTableModel.cColumnPropertySpecialType, CompoundTableModel.cColumnTypeIDCode);
+		com.actelion.research.chem.StereoMolecule benzene = new com.actelion.research.chem.StereoMolecule();
+		new com.actelion.research.chem.SmilesParser().parse(benzene, "c1ccccc1");
+		String a = new com.actelion.research.chem.Canonizer(benzene).getIDCode();
+		new com.actelion.research.chem.SmilesParser().parse(benzene, "c1ccncc1");
+		String b = new com.actelion.research.chem.Canonizer(benzene).getIDCode();
+		for (int r=0; r<3; r++) {
+			table.setTotalValueAt(r == 1 ? b : a, r, 0);
+			table.setTotalValueAt(a, r, 1);
+			table.setTotalValueAt("", r, 2);
+			table.setTotalValueAt(Integer.toString(2+r*2), r, 3);
+			}
+		table.finalizeTable(com.actelion.research.table.model.CompoundTableEvent.cSpecifierDefaultFiltersAndViews, null);
+		java.util.Properties config = new java.util.Properties();
+		config.setProperty("scaffoldColumn", "Scaffold"); config.setProperty("valueColumn", "Ki"); config.setProperty("mode", "hopping");
+		com.actelion.research.datawarrior.pyxis.DETaskAnalyseSubstituentPairs task = new com.actelion.research.datawarrior.pyxis.DETaskAnalyseSubstituentPairs(input);
+		SwingUtilities.invokeAndWait(() -> {
+			task.createDialogContent(); task.setDialogConfiguration(config);
+			if (!"hopping".equals(task.getDialogConfiguration().getProperty("mode"))) throw new AssertionError("hopping mode dialog roundtrip");
+			});
+		task.executeAsSubtask(config, null);
+		CompoundTableModel output = null;
+		for (DEFrame f:DataWarrior.getApplication().getFrameList()) if (f.getTitle().startsWith("Scaffold Hopping Pairs")) output = f.getTableModel();
+		if (output == null || output.getTotalRowCount() != 2 || !output.isColumnTypeStructure(output.findColumn("Scaffold B"))) fail("hopping task output");
+		System.out.println("Hopping GUI configuration and task: 3 input rows -> 2 pairs with scaffold A/B structures");
 		}
 
 	private static int countNodes(DefaultMutableTreeNode node) {

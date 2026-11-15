@@ -30,6 +30,14 @@ Both are in the **Chemistry** menu and can be recorded in macros.
   that share a scaffold and differ at exactly one R-group position, with both values of a
   chosen numerical column, their difference and their ratio. Run *Decompose R-Groups...*
   first; it creates the Scaffold and R1, R2, ... columns this analysis reads.
+  The second mode, *Same substituents, different scaffold*, compares the stored canonical
+  structure keys in the ordered R1..Rn columns: every position must match, and the
+  scaffold keys must differ. Empty and null mean the same absent group; explicit
+  hydrogen is a distinct key. It does not infer equivalent attachment positions or
+  align independently numbered decompositions. Use a consistently numbered decomposition
+  with the same R positions; a missing position is not inferred from an empty cell.
+  Values compare original numerical data, not log-display coordinates. Both modes
+  consider all rows, including filtered rows, and cap output at 200,000 pairs.
 
 ### What Pyxis changed
 * Window titles and the About text name the program Pyxis SAR Explorer.

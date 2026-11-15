@@ -46,6 +46,27 @@ public class SubstituentPairs {
 	 * @param maxPairs search stops once this number of pairs is reached
 	 */
 	public SubstituentPairs(String[] scaffold, String[][] substituent, int maxPairs) {
+		this(scaffold, substituent, maxPairs, false);
+		}
+
+	/** Hopping compares ordered substituent keys, including empty positions, at equal arity. */
+	public SubstituentPairs(String[] scaffold, String[][] substituent, int maxPairs, boolean hopping) {
+		if (hopping) {
+			Map<List<String>,List<Integer>> buckets = new java.util.LinkedHashMap<>();
+			for (int row=0; row<scaffold.length; row++) {
+				if (scaffold[row] == null || scaffold[row].isEmpty() || substituent[row].length == 0) continue;
+				List<String> key = new ArrayList<>();
+				for (String group:substituent[row]) key.add(normalize(group));
+				List<Integer> previous = buckets.computeIfAbsent(key, k -> new ArrayList<>());
+				for (int other:previous) {
+					if (scaffold[other].equals(scaffold[row])) continue;
+					if (mPairs.size() == maxPairs) { mTruncated = true; return; }
+					mPairs.add(new Pair(other, row, -1));
+					}
+				previous.add(row);
+				}
+			return;
+			}
 		// rows that agree on scaffold and all positions but one end up in the same bucket
 		Map<String,List<Integer>> bucketMap = new HashMap<>();
 		List<String> bucketOrder = new ArrayList<>();
@@ -58,7 +79,7 @@ public class SubstituentPairs {
 			int positions = substituent[row].length;
 			for (int position=0; position<positions; position++) {
 				StringBuilder key = new StringBuilder();
-				key.append(position).append('\t').append(scaffold[row]);
+				key.append(positions).append('\t').append(position).append('\t').append(scaffold[row]);
 				for (int i=0; i<positions; i++)
 					if (i != position)
 						key.append('\t').append(normalize(substituent[row][i]));

@@ -41,6 +41,12 @@ public class SubstituentPairsTest {
 		SubstituentPairs capped = new SubstituentPairs(scaffold, groups, 2);
 		check(capped.getPairs().size() == 2 && capped.isTruncated(), "pair limit is honoured and reported");
 
+		String[] cores = {"A", "B", "A", "C", "D", "E", ""};
+		String[][] decorations = {{"Me", null}, {"Me", ""}, {"Me", ""}, {"", "Me"}, {"Me"}, {}, {"Me", ""}};
+		SubstituentPairs hops = new SubstituentPairs(cores, decorations, 100, true);
+		check(hops.getPairs().size() == 2 && has(hops.getPairs(), 0, 1, -1) && has(hops.getPairs(), 1, 2, -1), "hopping: ordered equal arity, empty normalized, different scaffold only");
+		SubstituentPairs hopLimit = new SubstituentPairs(cores, decorations, 1, true);
+		check(hopLimit.isTruncated() && hopLimit.getPairs().size() == 1, "hopping cap");
 		if (sFailures != 0) {
 			System.out.println("FAILED: "+sFailures+" check(s)");
 			System.exit(1);
