@@ -75,12 +75,20 @@ jobs:
         include:
           - os: ubuntu-latest
             type: deb
+            arch: x64
             extra: --linux-package-name pyxis-sar-explorer --linux-shortcut --linux-app-category science --icon pyxis/icons/pyxis-256.png
           - os: macos-latest
             type: dmg
+            arch: arm64
+            extra: --mac-package-name "Pyxis SAR" --mac-package-identifier com.pyxisdiscovery.sarexplorer --icon pyxis/icons/pyxis.icns
+          # GitHub's standard Intel label: https://docs.github.com/en/actions/reference/runners/github-hosted-runners
+          - os: macos-15-intel
+            type: dmg
+            arch: x64
             extra: --mac-package-name "Pyxis SAR" --mac-package-identifier com.pyxisdiscovery.sarexplorer --icon pyxis/icons/pyxis.icns
           - os: windows-latest
             type: msi
+            arch: x64
             extra: --icon pyxis/icons/pyxis.ico --win-menu --win-shortcut --win-dir-chooser --win-upgrade-uuid 6f1c2b0e-6a0b-4f0c-9d63-5d0e7a1c2f41
     runs-on: ${{ matrix.os }}
     steps:
@@ -100,6 +108,14 @@ jobs:
         run: |
           echo "Runner architecture: $RUNNER_ARCH"
           java -XshowSettings:properties -version 2>&1 | tee runtime-architecture.txt
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          import re
+          arch = re.search(r'os.arch = (\S+)', Path('runtime-architecture.txt').read_text()).group(1)
+          expected = '${{ matrix.arch }}'
+          assert arch in ({'arm64', 'aarch64'} if expected == 'arm64' else {'amd64', 'x86_64'}), arch
+          print('PASS: bundled runtime architecture matches ' + expected)
+          PYTHON
 
       - name: Make application image
         shell: bash
@@ -141,7 +157,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: packaged-evidence-${{ matrix.type }}
+          name: packaged-evidence-${{ matrix.type }}-${{ matrix.arch }}
           path: |
             packaged-check/
             runtime-architecture.txt
@@ -163,11 +179,16 @@ jobs:
             --app-image "app-image/$APP_NAME${{ runner.os == 'macOS' && '.app' || '' }}" \
             --dest installers \
             ${{ matrix.extra }}
+          python3 - <<'PYTHON'
+          from pathlib import Path
+          for path in Path('installers').iterdir():
+              path.rename(path.with_name(path.stem + '-${{ matrix.arch }}' + path.suffix))
+          PYTHON
           ls -l installers
 
       - uses: actions/upload-artifact@v4
         with:
-          name: installer-${{ matrix.type }}
+          name: installer-${{ matrix.type }}-${{ matrix.arch }}
           path: installers/*
           retention-days: 30
 
