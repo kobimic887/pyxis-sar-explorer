@@ -8,6 +8,17 @@ public class RenderAbout {
   SwingUtilities.invokeAndWait(() -> {
    try {
     var panel = DEAboutDialog.createImagePanel();
+    if (args.length > 1) {
+     String expected = "Version " + args[1] + " | Built ";
+     boolean found = false;
+     for (var component : panel.getComponents()) {
+      if (component instanceof javax.swing.JLabel label && label.getText() != null
+          && label.getText().startsWith(expected) && !label.getText().endsWith("unknown"))
+       found = true;
+     }
+     if (!found) throw new IllegalStateException("About does not show packaged version " + args[1]);
+     System.out.println("PASS: About shows packaged version " + args[1] + " and build date");
+    }
     panel.setSize(panel.getPreferredSize()); panel.doLayout();
     var image = new BufferedImage(panel.getWidth(), panel.getHeight(), BufferedImage.TYPE_INT_RGB);
     var graphics = image.createGraphics(); panel.printAll(graphics); graphics.dispose();

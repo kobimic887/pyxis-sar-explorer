@@ -53,7 +53,7 @@ jobs:
           mkdir -p version-resources/resources
           echo '${{ steps.version.outputs.version }}' > version-resources/resources/pyxis-version.txt
           jar --update --file datawarrior_all.jar -C version-resources resources/pyxis-version.txt
-          java -Djava.awt.headless=true -cp datawarrior_all.jar pyxis/RenderAbout.java about-pyxis.png
+          java -Djava.awt.headless=true -cp datawarrior_all.jar pyxis/RenderAbout.java about-pyxis.png "${{ steps.version.outputs.version }}"
 
       - name: Scaffold tree window check
         run: xvfb-run -a pyxis/run-gui-check.sh test_data/sar/simpleSAR.dwar scaffold-tree.png
