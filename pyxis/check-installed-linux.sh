@@ -1,8 +1,11 @@
 #!/bin/bash
 set -euo pipefail
 mkdir -p packaged-check/installed
-sudo apt-get install -y ./installers/*.deb 2>&1 | tee packaged-check/installed/install.log
+# Hosted runners have no desktop environment. xdg-desktop-menu needs these
+# standard system directories to configure the DEB's desktop shortcut.
+sudo install -d -m 755 /usr/share/desktop-directories /usr/share/applications
 trap 'sudo dpkg --remove pyxis-sar-explorer 2>&1 | tee packaged-check/installed/uninstall.log' EXIT
+sudo apt-get install -y ./installers/*.deb 2>&1 | tee packaged-check/installed/install.log
 dpkg-query --status pyxis-sar-explorer | tee packaged-check/installed/package-status.txt
 dpkg-query -L pyxis-sar-explorer > packaged-check/installed/package-files.txt
 launcher=$(python3 - <<'PY'
