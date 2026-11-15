@@ -73,7 +73,10 @@ The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
   **Not yet tested against a live vault**; local HTTP mocks verify the transport/mapping.
 
 The [training workflow coverage](pyxis/TRAINING-COVERAGE.md) lists supported operations,
-partial equivalents, missing column locking and verification limits.
+partial equivalents, missing column locking and verification limits. Column locking
+remains unimplemented: a shared-model split-table probe exposed a visibility-bookkeeping
+exception, and the existing table/view event routing still needs adaptation. The new
+R-group combination grid and one-step cross-view filter are also still outstanding.
 
 ### What Pyxis changed
 * Window titles and the About text name the program Pyxis SAR Explorer.
