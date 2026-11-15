@@ -231,12 +231,23 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 		startProgress("Reading R-groups...", 0, rowCount);
 		String[] scaffold = new String[rowCount];
 		String[][] substituent = new String[rowCount][rGroupColumn.length];
+		// Rows are captured once. Everything below reads these records and never asks the
+		// table for a row index again, so sorting or deleting rows while the task runs
+		// cannot make it read a wrong or missing row.
+		final com.actelion.research.table.model.CompoundRecord[] record = new com.actelion.research.table.model.CompoundRecord[rowCount];
 		for (int row=0; row<rowCount; row++) {
 			if (threadMustDie())
 				return;
-			scaffold[row] = mTableModel.getTotalValueAt(row, scaffoldColumn);
+			try {
+				record[row] = mTableModel.getTotalRecord(row);
+				}
+			catch (ArrayIndexOutOfBoundsException e) {
+				showErrorMessage("Rows were removed from the table while the analysis started. Please run it again.");
+				return;
+				}
+			scaffold[row] = mTableModel.encodeData(record[row], scaffoldColumn);
 			for (int i=0; i<rGroupColumn.length; i++)
-				substituent[row][i] = mTableModel.getTotalValueAt(row, rGroupColumn[i]);
+				substituent[row][i] = mTableModel.encodeData(record[row], rGroupColumn[i]);
 			}
 
 		startProgress("Finding pairs...", 0, 0);
@@ -287,20 +298,20 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 				updateProgress(i);
 			SubstituentPairs.Pair pair = pairs.get(i);
 			if (structureColumn != -1) {
-				target.setTotalValueAt(mTableModel.getTotalValueAt(pair.rowA, structureColumn), i, colStructureA);
-				target.setTotalValueAt(mTableModel.getTotalValueAt(pair.rowB, structureColumn), i, colStructureB);
+				target.setTotalValueAt(mTableModel.encodeData(record[pair.rowA], structureColumn), i, colStructureA);
+				target.setTotalValueAt(mTableModel.encodeData(record[pair.rowB], structureColumn), i, colStructureB);
 				}
 			target.setTotalValueAt(scaffold[pair.rowA], i, colScaffold);
 			target.setTotalValueAt(hopping ? "Scaffold" : mTableModel.getColumnTitleNoAlias(rGroupColumn[pair.position]), i, colPosition);
 			target.setTotalValueAt((hopping ? scaffold[pair.rowB] : substituent[pair.rowA][pair.position]), i, colGroupA);
 			target.setTotalValueAt((hopping ? Integer.toString(rGroupColumn.length) : substituent[pair.rowB][pair.position]), i, colGroupB);
 			if (idColumn != -1) {
-				target.setTotalValueAt(mTableModel.getTotalValueAt(pair.rowA, idColumn), i, colIDA);
-				target.setTotalValueAt(mTableModel.getTotalValueAt(pair.rowB, idColumn), i, colIDB);
+				target.setTotalValueAt(mTableModel.encodeData(record[pair.rowA], idColumn), i, colIDA);
+				target.setTotalValueAt(mTableModel.encodeData(record[pair.rowB], idColumn), i, colIDB);
 				}
 			if (valueColumn != -1) {
-				double a = mTableModel.getTotalOriginalDoubleAt(pair.rowA, valueColumn);
-				double b = mTableModel.getTotalOriginalDoubleAt(pair.rowB, valueColumn);
+				double a = originalValue(record[pair.rowA], valueColumn);
+				double b = originalValue(record[pair.rowB], valueColumn);
 				target.setTotalValueAt(format(a), i, colValueA);
 				target.setTotalValueAt(format(b), i, colValueA+1);
 				target.setTotalValueAt(format(b - a), i, colValueA+2);
@@ -311,7 +322,7 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 		java.util.IdentityHashMap<com.actelion.research.table.model.CompoundRecord,com.actelion.research.table.model.CompoundRecord[]> links = new java.util.IdentityHashMap<>();
         for (int i=0;i<pairs.size();i++) {
             SubstituentPairs.Pair pair=pairs.get(i);
-            links.put(target.getTotalRecord(i),new com.actelion.research.table.model.CompoundRecord[]{mTableModel.getTotalRecord(pair.rowA),mTableModel.getTotalRecord(pair.rowB)});
+            links.put(target.getTotalRecord(i),new com.actelion.research.table.model.CompoundRecord[]{record[pair.rowA],record[pair.rowB]});
         }
         target.finalizeTable(CompoundTableEvent.cSpecifierDefaultFiltersAndViews, getProgressController());
         SwingUtilities.invokeLater(() -> SourceRowLink.attach((DEFrame)getParentFrame(),frame,links,false));
@@ -319,6 +330,12 @@ public class DETaskAnalyseSubstituentPairs extends ConfigurableTask {
 		if (analysis.isTruncated())
 			showInteractiveTaskMessage("More than "+MAX_PAIRS+" pairs exist. Only the first "+MAX_PAIRS+" are listed.\n"
 					+ "Create a smaller derived table or decompose with a more specific scaffold to see all.", JOptionPane.WARNING_MESSAGE);
+		}
+
+	/** Same value as getTotalOriginalDoubleAt(), but for a captured record instead of a row index. */
+	private double originalValue(com.actelion.research.table.model.CompoundRecord record, int column) {
+		double value = record.getDouble(column);
+		return mTableModel.isLogarithmicViewMode(column) ? Math.pow(10.0, value) : value;
 		}
 
 	/** Missing values stay empty instead of becoming 'NaN' text. */

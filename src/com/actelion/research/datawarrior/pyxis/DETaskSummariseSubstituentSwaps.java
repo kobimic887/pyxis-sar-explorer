@@ -222,13 +222,22 @@ public class DETaskSummariseSubstituentSwaps extends ConfigurableTask {
 		String[] scaffold = new String[rowCount];
 		String[][] substituent = new String[rowCount][rGroupColumn.length];
 		double[] value = new double[rowCount];
+		// captured once, so later row changes in the table cannot shift what a row index means
+		CompoundRecord[] record = new CompoundRecord[rowCount];
 		for (int row=0; row<rowCount; row++) {
 			if (threadMustDie())
 				return;
-			scaffold[row] = mTableModel.getTotalValueAt(row, scaffoldColumn);
+			try {
+				record[row] = mTableModel.getTotalRecord(row);
+				}
+			catch (ArrayIndexOutOfBoundsException e) {
+				showErrorMessage("Rows were removed from the table while the analysis started. Please run it again.");
+				return;
+				}
+			scaffold[row] = mTableModel.encodeData(record[row], scaffoldColumn);
 			for (int i=0; i<rGroupColumn.length; i++)
-				substituent[row][i] = mTableModel.getTotalValueAt(row, rGroupColumn[i]);
-			value[row] = mTableModel.getTotalOriginalDoubleAt(row, valueColumn);
+				substituent[row][i] = mTableModel.encodeData(record[row], rGroupColumn[i]);
+			value[row] = (mTableModel.isLogarithmicViewMode(valueColumn) ? Math.pow(10.0, record[row].getDouble(valueColumn)) : record[row].getDouble(valueColumn));
 			}
 
 		startProgress("Finding pairs...", 0, 0);
@@ -279,7 +288,7 @@ public class DETaskSummariseSubstituentSwaps extends ConfigurableTask {
 			CompoundRecord[] source = new CompoundRecord[swap.rows.size()];
 			int index = 0;
 			for (int row:swap.rows)
-				source[index++] = mTableModel.getTotalRecord(row);
+				source[index++] = record[row];
 			links.put(target.getTotalRecord(i), source);
 			}
 
