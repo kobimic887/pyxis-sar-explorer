@@ -9,7 +9,8 @@ javac -nowarn -sourcepath src -d "$OUT" -classpath "lib/*" \
   src/com/actelion/research/datawarrior/pyxis/SubstituentPairs.java \
   src/com/actelion/research/datawarrior/pyxis/DocxTableWriter.java \
   src/com/actelion/research/datawarrior/pyxis/CddVaultClient.java \
-  pyxis/test/RGroupGridTest.java pyxis/test/ScaffoldSessionTest.java pyxis/test/ScaffoldHierarchyTest.java pyxis/test/SubstituentPairsTest.java pyxis/test/DocxTableWriterTest.java pyxis/test/CddVaultClientTest.java
+  src/com/actelion/research/datawarrior/pyxis/SwapSummary.java \
+  pyxis/test/SwapSummaryTest.java pyxis/test/RGroupGridTest.java pyxis/test/ScaffoldSessionTest.java pyxis/test/ScaffoldHierarchyTest.java pyxis/test/SubstituentPairsTest.java pyxis/test/DocxTableWriterTest.java pyxis/test/CddVaultClientTest.java
 java -classpath "$OUT:lib/*" ScaffoldHierarchyTest "$@"
 java -classpath "$OUT:lib/*" SubstituentPairsTest
 
@@ -20,3 +21,5 @@ java -Djava.awt.headless=true -classpath "$OUT:lib/*" CddVaultClientTest
 java -classpath "$OUT:lib/*" ScaffoldSessionTest
 
 java -classpath "$OUT:lib/*" RGroupGridTest
+
+java -classpath "$OUT:lib/*" SwapSummaryTest

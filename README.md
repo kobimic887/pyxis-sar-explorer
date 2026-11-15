@@ -6,7 +6,8 @@ the original README follows below. It is an independent program and makes no cla
 reproduce the results of any other SAR software.
 
 ### What Pyxis added
-The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
+The whole workflow is in the top-level **SAR** menu, in the order it is usually done.
+The same tasks are also in the **Chemistry** menu and can be recorded in macros.
 
 * **Build Scaffold Tree...** (`buildScaffoldTree`) opens a window with a hierarchical tree of
   the scaffolds of all molecules. Small scaffolds shared by many molecules are at the top,
@@ -42,6 +43,28 @@ The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
   Selecting a pair selects both original molecules while the source stays open.
   Values compare original numerical data, not log-display coordinates. Both modes
   consider all rows, including filtered rows, and cap output at 200,000 pairs.
+
+* **Summarise Substituent Swaps...** (`summariseSubstituentSwaps`) answers which exchange of
+  one substituent by another goes with which change of a value. All single-position pairs
+  that replace X by Y are pooled, whatever the scaffold or R-group position, into one row:
+  number of pairs, pairs that have both values, number of scaffolds, mean, median, smallest
+  and largest change, mean fold change (geometric mean of the ratio, positive values only),
+  and how often the value went up or down. Change is value(To) minus value(From); X to Y
+  and Y to X are one row. An empty From or To structure stands for hydrogen. Selecting a
+  row selects the molecules behind it in the source table. This describes the loaded
+  collection; it is not a prediction for other molecules.
+  In the scaffold tree, the bar beside each scaffold is coloured by the family's median of
+  the chosen statistics column, blue (low) to red (high) across the tree, on a logarithmic
+  scale when all medians are positive and span more than a factor of 100.
+
+* **Show Only Rows Selected In Other Views** (popup menu of a 2D or 3D view) restricts that
+  one view to the rows that are currently selected and keeps following the selection, so a
+  lasso in one plot decides what a second plot shows. Other views are unaffected. A
+  selection made inside the restricted view itself is not followed. It uses a row list
+  named *Live Selection*, which is removed when the last view stops using it. Tables and
+  structure views cannot be restricted this way. After saving and reopening, the view
+  stays restricted to the saved list but no longer follows the selection until the option
+  is switched on again. The option is not macro recorded.
 
 * **Create R-Group Table...** (`createRGroupTable`) copies all rows with one chosen
   decomposed scaffold into a new document: Scaffold, numbered R-group columns, molecule,

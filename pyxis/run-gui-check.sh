@@ -39,3 +39,8 @@ javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/LiveSelectionF
 java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/live-prefs" \
   --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
   -classpath "datawarrior_all.jar:$OUT" LiveSelectionFilterGuiCheck "$OUT/grid.dwam" "${2%.png}-live-filter.png"
+
+javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/SwapSummaryGuiCheck.java
+java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/swap-prefs" \
+  --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+  -classpath "datawarrior_all.jar:$OUT" SwapSummaryGuiCheck "$OUT/grid.dwam"

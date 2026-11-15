@@ -26,9 +26,12 @@ they were not all manually retested in this change.
 | Scaffold-hopping pairs | Supported | Same substituents, different scaffold mode. Ordered R-group keys must agree at every position, scaffold keys must differ. Requires consistent decomposition numbering; no positional remapping. Session-local pair selection selects both original molecules. |
 | 2D scatter, axes, coloring, tooltips, regression | Supported | Existing 2D View and statistical/marker controls. |
 | Rotatable 3D scatter with three axes | Supported | Existing 3D View. |
-| Dock/move views and use one to filter another | Partly | Existing dockable views and explicit graphical filter/lasso linking. This uses shared row visibility rather than independent SARvision “Subset 2” panels per view. |
+| Dock/move views and use one to filter another | Supported for graph views | View popup → Show Only Rows Selected In Other Views restricts one 2D/3D view to the live selection without affecting other views. Tables and structure views cannot be restricted per view; they follow the shared filters. Session-only: after reopening, the restriction stays but stops following the selection. |
 
 ## Verification added
+
+- `LiveSelectionFilterGuiCheck`: built application, two 2D views; the restricted view shows 3, 2, 0 and 4 rows as the selection changes while the other keeps every row; the view's own marker bookkeeping agrees; switching off restores all rows and removes the helper list.
+- `SwapSummaryTest` and `SwapSummaryGuiCheck`: pooling over scaffolds, merged direction, missing and zero values; in the built application every summary row's pair counts and mean change equal a recount made directly from the decomposed table, selecting a row selects exactly its source molecules, and the SAR menu lists the workflow.
 
 - `ScaffoldTreeGuiCheck` source links: sort both documents with duplicate structures, select original records, select both members of a pair, filter/clear linked rows, ignore deleted originals, detach on source close. Renders the linked table in-process.
 

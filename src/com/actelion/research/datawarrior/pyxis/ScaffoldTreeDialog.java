@@ -279,6 +279,7 @@ public class ScaffoldTreeDialog extends JDialog {
 			}
 		for (Node node:mHierarchy.getNodesInDisplayOrder())
 			mStatistics.put(node, ScaffoldHierarchy.statistics(node.getMembers(), subset, values));
+		updateColorScale();
 		saveSession();
 		mTree.repaint();
 		mLabelStatus.setText("Snapshot: "+choice+"; "+mValue.getSelectedItem()+". Refresh after changing filters or data. Finite values only.");
@@ -361,7 +362,55 @@ public class ScaffoldTreeDialog extends JDialog {
 		}
 
 	/** Draws the scaffold structure with its molecule counts below. */
+	private double mScaleMin = Double.NaN, mScaleMax = Double.NaN;
+	private boolean mScaleIsLogarithmic;
+
+	/**
+	 * The colour bar beside each scaffold shows its family's median on a blue (low) to red
+	 * (high) scale spanning the medians of all scaffolds in the tree. Values that are all
+	 * positive and span more than two orders of magnitude, as potencies usually do, are
+	 * placed on a logarithmic scale so that the bulk of the scaffolds is not one colour.
+	 */
+	private void updateColorScale() {
+		double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
+		for (double[] stats:mStatistics.values()) {
+			if (stats != null && stats[1] != 0 && Double.isFinite(stats[3])) {
+				min = Math.min(min, stats[3]);
+				max = Math.max(max, stats[3]);
+				}
+			}
+		boolean hasScale = min < max;
+		mScaleMin = hasScale ? min : Double.NaN;
+		mScaleMax = hasScale ? max : Double.NaN;
+		mScaleIsLogarithmic = hasScale && min > 0 && max / min > 100;
+		}
+
+	/** @return colour of a median on the current scale, or null if there is none */
+	Color colorOfMedian(double median) {
+		if (!Double.isFinite(median) || Double.isNaN(mScaleMin))
+			return null;
+		double position = mScaleIsLogarithmic
+				? (Math.log(median) - Math.log(mScaleMin)) / (Math.log(mScaleMax) - Math.log(mScaleMin))
+				: (median - mScaleMin) / (mScaleMax - mScaleMin);
+		position = Math.max(0.0, Math.min(1.0, position));
+		return Color.getHSBColor((float)(0.62 * (1.0 - position)), 0.85f, 0.9f);	// blue to red through green
+		}
+
+	/** Three significant digits are what a tree label can usefully show. */
+	static String shortNumber(double value) {
+		if (!Double.isFinite(value))
+			return "";
+		if (value == 0)
+			return "0";
+		double magnitude = Math.abs(value);
+		if (magnitude >= 100000 || magnitude < 0.001)
+			return String.format(java.util.Locale.ROOT, "%.2e", value);
+		int decimals = Math.max(0, 2 - (int)Math.floor(Math.log10(magnitude)));
+		return new java.math.BigDecimal(value).setScale(decimals, java.math.RoundingMode.HALF_UP).stripTrailingZeros().toPlainString();
+		}
+
 	private class ScaffoldRenderer extends JPanel implements TreeCellRenderer {
+		private final JPanel mColorBar = new JPanel();
 		private final JStructureView mStructureView = new JStructureView();
 		private final JLabel mLabel = new JLabel();
 
@@ -373,6 +422,8 @@ public class ScaffoldTreeDialog extends JDialog {
 			mStructureView.setDisableBorder(true);
 			mLabel.setHorizontalAlignment(SwingConstants.CENTER);
 			mLabel.setFont(mLabel.getFont().deriveFont(mLabel.getFont().getSize2D()*0.9f));
+			mColorBar.setPreferredSize(new Dimension(HiDPIHelper.scale(8), HiDPIHelper.scale(8)));
+			add(mColorBar, BorderLayout.WEST);
 			add(mStructureView, BorderLayout.CENTER);
 			add(mLabel, BorderLayout.SOUTH);
 			setPreferredSize(new Dimension(HiDPIHelper.scale(440), HiDPIHelper.scale(82)));
@@ -389,7 +440,10 @@ public class ScaffoldTreeDialog extends JDialog {
 				if (node.getExactMemberCount() != node.getMemberCount())
 					text += " ("+node.getExactMemberCount()+" exact)";
 				double[] stats = mStatistics.get(node);
-				if (stats != null) text += " | subset "+(int)stats[0]+(stats[1] == 0 ? "" : "; mean "+stats[2]+"; median "+stats[3]);
+				if (stats != null) text += " | subset "+(int)stats[0]+(stats[1] == 0 ? "" : "; mean "+shortNumber(stats[2])+"; median "+shortNumber(stats[3]));
+				Color barColor = (stats == null || stats[1] == 0) ? null : colorOfMedian(stats[3]);
+				mColorBar.setOpaque(barColor != null);
+				if (barColor != null) mColorBar.setBackground(barColor);
 				if (node.isUserDefined()) text = "User-defined: "+text;
 				mLabel.setText(text);
 				}

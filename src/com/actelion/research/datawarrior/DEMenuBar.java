@@ -453,8 +453,10 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		add(buildFileMenu());
 		add(buildEditMenu());
 		add(buildDataMenu());
-		if (!SUPPRESS_CHEMISTRY)
+		if (!SUPPRESS_CHEMISTRY) {
 			add(buildChemistryMenu());
+			add(buildPyxisSARMenu());
+			}
 		if (!"true".equals(System.getProperty("skipDatabases")))
 			add(buildDatabaseMenu());
 		add(buildListMenu());
@@ -1187,6 +1189,38 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		item.setText(shortName);
 		item.setActionCommand(command);
 		item.addActionListener(this);
+		menu.add(item);
+		}
+
+	/**
+	 * Pyxis SAR Explorer: the whole SAR workflow in the order in which it is usually done.
+	 * The Pyxis tasks are started directly; inherited DataWarrior tasks are started through
+	 * their own Chemistry menu items, so that both menus always do exactly the same.
+	 */
+	protected JMenu buildPyxisSARMenu() {
+		JMenu menu = new JMenu("SAR");
+		menu.setMnemonic(KeyEvent.VK_S);
+
+		addPyxisItem(menu, "Build Scaffold Tree...", () -> new com.actelion.research.datawarrior.pyxis.DETaskBuildScaffoldTree(mParentFrame).defineAndRun());
+		menu.addSeparator();
+		addPyxisItem(menu, "Decompose R-Groups...", () -> jMenuChemDecomposeRGroups.doClick());
+		addPyxisItem(menu, "Create R-Group Table...", () -> new com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupTable(mParentFrame).defineAndRun());
+		addPyxisItem(menu, "Create R-Group Grid...", () -> new com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupGrid(mParentFrame).defineAndRun());
+		menu.addSeparator();
+		addPyxisItem(menu, "Analyse Substituent Pairs...", () -> new com.actelion.research.datawarrior.pyxis.DETaskAnalyseSubstituentPairs(mParentFrame).defineAndRun());
+		addPyxisItem(menu, "Summarise Substituent Swaps...", () -> new com.actelion.research.datawarrior.pyxis.DETaskSummariseSubstituentSwaps(mParentFrame).defineAndRun());
+		addPyxisItem(menu, "Analyse Activity Cliffs...", () -> jMenuChemAnalyzeCliffs.doClick());
+		menu.addSeparator();
+		addPyxisItem(menu, "Calculate Properties...", () -> jMenuChemAddProperties.doClick());
+		addPyxisItem(menu, "Select Diverse Set...", () -> jMenuChemSelectDiverse.doClick());
+		menu.addSeparator();
+		addPyxisItem(menu, "Export Visible Table to MS Word...", () -> new com.actelion.research.datawarrior.pyxis.DETaskExportWord(mParentFrame).defineAndRun());
+		return menu;
+		}
+
+	private void addPyxisItem(JMenu menu, String text, Runnable action) {
+		JMenuItem item = new JMenuItem(text);
+		item.addActionListener(e -> action.run());
 		menu.add(item);
 		}
 
