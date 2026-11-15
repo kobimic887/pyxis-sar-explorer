@@ -48,6 +48,13 @@ jobs:
       - name: Build application
         run: sh ./buildDataWarrior
 
+      - name: Embed Pyxis build version
+        run: |
+          mkdir -p version-resources/resources
+          echo '${{ steps.version.outputs.version }}' > version-resources/resources/pyxis-version.txt
+          jar --update --file datawarrior_all.jar -C version-resources resources/pyxis-version.txt
+          java -Djava.awt.headless=true -cp datawarrior_all.jar pyxis/RenderAbout.java about-pyxis.png
+
       - name: Scaffold tree window check
         run: xvfb-run -a pyxis/run-gui-check.sh test_data/sar/simpleSAR.dwar scaffold-tree.png
 
@@ -57,6 +64,7 @@ jobs:
           path: |
             datawarrior_all.jar
             scaffold-tree.png
+            about-pyxis.png
           retention-days: 14
 
   installers:
@@ -67,13 +75,13 @@ jobs:
         include:
           - os: ubuntu-latest
             type: deb
-            extra: --linux-package-name pyxis-sar-explorer --linux-shortcut --linux-app-category science --icon linux/icons/datawarrior.png
+            extra: --linux-package-name pyxis-sar-explorer --linux-shortcut --linux-app-category science --icon pyxis/icons/pyxis-256.png
           - os: macos-latest
             type: dmg
-            extra: --mac-package-name "Pyxis SAR" --mac-package-identifier com.pyxisdiscovery.sarexplorer --icon macosx/icons/datawarrior.icns
+            extra: --mac-package-name "Pyxis SAR" --mac-package-identifier com.pyxisdiscovery.sarexplorer --icon pyxis/icons/pyxis.icns
           - os: windows-latest
             type: msi
-            extra: --win-menu --win-shortcut --win-dir-chooser --win-upgrade-uuid 6f1c2b0e-6a0b-4f0c-9d63-5d0e7a1c2f41
+            extra: --icon pyxis/icons/pyxis.ico --win-menu --win-shortcut --win-dir-chooser --win-upgrade-uuid 6f1c2b0e-6a0b-4f0c-9d63-5d0e7a1c2f41
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -96,7 +104,7 @@ jobs:
       - name: Make application image
         shell: bash
         run: |
-          rm -f app-input/scaffold-tree.png
+          rm -f app-input/*.png
           jpackage --type app-image \
             --name "$APP_NAME" \
             --app-version "${{ needs.build.outputs.version }}" \
@@ -106,6 +114,7 @@ jobs:
             --main-class "$MAIN_CLASS" \
             --java-options "$JAVA_OPTIONS" \
             --add-modules "$MODULES" \
+            --icon "pyxis/icons/pyxis.${{ runner.os == 'macOS' && 'icns' || runner.os == 'Windows' && 'ico' || 'png' }}" \
             --dest app-image
 
       - name: Run packaged Pyxis tasks (Linux)
@@ -129,7 +138,7 @@ jobs:
       - name: Make installer
         shell: bash
         run: |
-          rm -f app-input/scaffold-tree.png
+          rm -f app-input/*.png
           jpackage --type ${{ matrix.type }} \
             --name "$APP_NAME" \
             --app-version "${{ needs.build.outputs.version }}" \

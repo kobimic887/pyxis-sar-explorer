@@ -61,7 +61,7 @@ public class DEFrame extends JFrame implements ApplicationViewFactory,CompoundTa
 		mUIScaling = calculatePixelScaling();
 		enableEvents(AWTEvent.WINDOW_EVENT_MASK);
 		try {
-			setIconImage(Toolkit.getDefaultToolkit().createImage(getClass().getResource("/images/datawarrior.png")));
+			setIconImage(Toolkit.getDefaultToolkit().createImage(getClass().getResource("/images/pyxis.png")));
 
 			DECompoundTableModel tableModel = new DECompoundTableModel();
 			tableModel.setHitlistHandler(new CompoundTableListHandler(tableModel));

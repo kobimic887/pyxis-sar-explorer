@@ -40,7 +40,7 @@ public class DEAboutDialog extends JDialog {
 	private int mMillis;
 
     public DEAboutDialog(DEFrame owner) {
-		super(owner, "About DataWarrior", true);
+		super(owner, "About Pyxis SAR Explorer", true);
 
 	    setUndecorated(true);
 		getContentPane().add(createImagePanel());
@@ -68,7 +68,7 @@ public class DEAboutDialog extends JDialog {
 		}
 
     public DEAboutDialog(DEFrame owner, int millis) {
-		super(owner, "About DataWarrior", true);
+		super(owner, "About Pyxis SAR Explorer", true);
 
 	    setUndecorated(true);
 		getContentPane().add(createImagePanel());
@@ -89,40 +89,38 @@ public class DEAboutDialog extends JDialog {
 		setVisible(true);
 		}
 
-	private JImagePanelFixedSize createImagePanel() {
-		final double scale = 0.5;
-    	return new JImagePanelFixedSize("/images/about.jpg", scale) {
-			@Override public void paintComponent(Graphics g) {
-				super.paintComponent(g);
-				((Graphics2D)g).setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-				int fontSize = HiDPIHelper.scale(12);
-				String text = builtDate();
-				int x = HiDPIHelper.scale((int)(12 * scale));
-				int y = HiDPIHelper.scale((int)(750 * scale));
-				g.setFont(g.getFont().deriveFont(Font.BOLD, (float)fontSize));
-				g.setColor(Color.WHITE);
-				g.drawString(text, x, y);
-				// GPL: a modified version must say so and keep the original attribution
-				g.drawString("Pyxis SAR Explorer - a modified version of DataWarrior (GPL v3)", x, y - 2*fontSize);
-				}
-			};
-		}
+    /** Shared with the in-process render check: no upstream artwork is rebranded. */
+    public static JPanel createImagePanel() {
+        JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
+        panel.setBackground(Color.WHITE);
+        panel.setBorder(BorderFactory.createEmptyBorder(28, 32, 28, 32));
+        JLabel logo = new JLabel(new ImageIcon(new ImageIcon(DEAboutDialog.class.getResource("/images/pyxis-logo.png"))
+                .getImage().getScaledInstance(422, 80, Image.SCALE_SMOOTH)));
+        panel.add(logo);
+        panel.add(Box.createVerticalStrut(20));
+        JLabel name = new JLabel("Pyxis SAR Explorer");
+        name.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 28));
+        panel.add(name);
+        panel.add(Box.createVerticalStrut(12));
+        panel.add(new JLabel("Version " + resource("pyxis-version.txt", "development")
+                + " | Built " + resource("builtDate.txt", "unknown")));
+        panel.add(Box.createVerticalStrut(18));
+        panel.add(new JLabel("<html>Pyxis SAR Explorer is a modified version of DataWarrior,<br>"
+                + "(C) Thomas Sander and Idorsia Pharmaceuticals Ltd.,<br>"
+                + "licensed under the GNU GPL v3</html>"));
+        panel.add(Box.createVerticalStrut(18));
+        panel.add(new JLabel("Source: https://github.com/kobimic887/pyxis-sar-explorer"));
+        panel.add(Box.createVerticalStrut(12));
+        panel.add(new JLabel("Press Escape or click to close"));
+        return panel;
+    }
 
-	public String dateString(long millis) {
-		return new SimpleDateFormat("dd-MMM-yyyy").format(new Date(millis));
-		}
-
-	private String builtDate() {
-		URL url = getClass().getResource("/resources/builtDate.txt");
-		if(url != null) {
-			try {
-				BufferedReader reader = new BufferedReader(new InputStreamReader(url.openStream()));
-				String version = DEUpdateHandler.DATAWARRIOR_VERSION + " (built " + reader.readLine() + ")";
-				reader.close();
-				return version;
-				}
-			catch (IOException e) {}
-			}
-		return DEUpdateHandler.DATAWARRIOR_VERSION;
-		}
-	}
+    private static String resource(String name, String fallback) {
+        try (var input = DEAboutDialog.class.getResourceAsStream("/resources/" + name)) {
+            if (input != null)
+                return new String(input.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+        } catch (IOException e) { /* Development builds may have no packaging metadata. */ }
+        return fallback;
+    }
+}
