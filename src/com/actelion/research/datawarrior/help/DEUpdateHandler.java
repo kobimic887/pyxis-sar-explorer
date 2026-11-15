@@ -121,6 +121,14 @@ public class DEUpdateHandler extends JDialog implements ActionListener {
 		}
 
 	public static void getPostInstallInfoAndHandleUpdates(DEFrame parent) {
+		// Pyxis SAR Explorer: the upstream update server only knows official DataWarrior
+		// builds. Following it would replace this modified program with an unmodified
+		// one, so this build neither contacts that server nor updates itself from it.
+		if (!"true".equals(System.getProperty("pyxisFollowUpstreamUpdates"))) {
+			sPostInstallInfo = new Properties();
+			return;
+			}
+
 		new Thread(() -> {
 			Preferences prefs = DataWarrior.getPreferences();
 

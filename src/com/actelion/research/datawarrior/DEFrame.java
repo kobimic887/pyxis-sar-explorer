@@ -45,7 +45,7 @@ import java.util.Comparator;
 public class DEFrame extends JFrame implements ApplicationViewFactory,CompoundTableListener,CompoundTableListListener,RuntimePropertyListener {
 	@Serial
 	private static final long serialVersionUID = 0x20070227;
-	private static final String DEFAULT_TITLE = "DataWarrior";
+	private static final String DEFAULT_TITLE = "Pyxis SAR Explorer";
 
 	private DEMenuBar mMenuBar;
 	private DEParentPane	mParentPane;

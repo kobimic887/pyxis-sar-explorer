@@ -1,0 +1,237 @@
+/*
+ * Pyxis SAR Explorer addition to DataWarrior.
+ * Copyright (C) 2026 Pyxis Discovery.
+ *
+ * This file is free software: you can redistribute it and/or modify it under the terms of the
+ * GNU General Public License as published by the Free Software Foundation, either version 3 of
+ * the License, or (at your option) any later version. It is distributed WITHOUT ANY WARRANTY.
+ * See the GNU General Public License for more details: http://www.gnu.org/licenses/.
+ */
+
+package com.actelion.research.datawarrior.pyxis;
+
+import com.actelion.research.datawarrior.DEFrame;
+import com.actelion.research.datawarrior.DataWarrior;
+import com.actelion.research.datawarrior.pyxis.ScaffoldHierarchy.Node;
+import com.actelion.research.gui.JStructureView;
+import com.actelion.research.gui.hidpi.HiDPIHelper;
+import com.actelion.research.table.model.CompoundRecord;
+import com.actelion.research.table.model.CompoundTableEvent;
+import com.actelion.research.table.model.CompoundTableModel;
+
+import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeCellRenderer;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
+import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.BitSet;
+import java.util.List;
+
+/**
+ * Non-modal window showing the scaffold tree of one table. Double clicking a scaffold
+ * selects all molecules of that scaffold family in the table the tree was built from.
+ */
+public class ScaffoldTreeDialog extends JDialog {
+	private final DEFrame mParentFrame;
+	private final ScaffoldHierarchy mHierarchy;
+	private final CompoundRecord[] mRecord;
+	private final JTree mTree;
+	private final JCheckBox mCheckBoxExactOnly;
+	private final JLabel mLabelStatus;
+
+	public ScaffoldTreeDialog(DEFrame parent, ScaffoldHierarchy hierarchy, CompoundRecord[] record,
+							  String structureColumnName, int minMembers, int emptyRows) {
+		super(parent, "Scaffold Tree of '"+structureColumnName+"' - "+parent.getTitle(), false);
+		mParentFrame = parent;
+		mHierarchy = hierarchy;
+		mRecord = record;
+
+		DefaultMutableTreeNode root = new DefaultMutableTreeNode("Scaffolds");
+		for (Node node:hierarchy.getRoots())
+			root.add(createTreeNode(node));
+
+		mTree = new JTree(new DefaultTreeModel(root));
+		mTree.setRootVisible(false);
+		mTree.setShowsRootHandles(true);
+		mTree.setRowHeight(HiDPIHelper.scale(84));
+		mTree.setCellRenderer(new ScaffoldRenderer());
+		mTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
+		mTree.setToggleClickCount(0);	// double click selects molecules instead of expanding
+		mTree.addMouseListener(new MouseAdapter() {
+			@Override public void mouseClicked(MouseEvent e) {
+				if (e.getClickCount() == 2 && mTree.getPathForLocation(e.getX(), e.getY()) != null)
+					selectMoleculesOfChosenScaffold();
+				}
+			});
+
+		mCheckBoxExactOnly = new JCheckBox("Only molecules with exactly this scaffold");
+
+		JButton buttonSelect = new JButton("Select Molecules");
+		buttonSelect.addActionListener(e -> selectMoleculesOfChosenScaffold());
+		JButton buttonNoScaffold = new JButton("Select Ring-Free");
+		buttonNoScaffold.setEnabled(!hierarchy.getRowsWithoutScaffold().isEmpty());
+		buttonNoScaffold.addActionListener(e -> select(hierarchy.getRowsWithoutScaffold(), "ring-free"));
+		JButton buttonExpand = new JButton("Expand All");
+		buttonExpand.addActionListener(e -> { for (int i=0; i<mTree.getRowCount(); i++) mTree.expandRow(i); });
+		JButton buttonTable = new JButton("Tree As New Table");
+		buttonTable.addActionListener(e -> createTable());
+
+		int shown = hierarchy.getNodesInDisplayOrder().size();
+		int withScaffold = hierarchy.getRowCount() - hierarchy.getRowsWithoutScaffold().cardinality();
+		StringBuilder summary = new StringBuilder();
+		summary.append(shown).append(" scaffolds from ").append(withScaffold).append(" molecules with rings");
+		if (minMembers > 1)
+			summary.append(" (scaffolds with fewer than ").append(minMembers).append(" molecules hidden)");
+		summary.append(". ").append(hierarchy.getRowsWithoutScaffold().cardinality()).append(" ring-free molecules");
+		if (emptyRows != 0)
+			summary.append(", ").append(emptyRows).append(" rows without structure");
+		summary.append('.');
+		mLabelStatus = new JLabel("Double click a scaffold to select its molecules in the table.");
+
+		int gap = HiDPIHelper.scale(8);
+		JPanel buttons = new JPanel(new FlowLayout(FlowLayout.LEFT, gap, 0));
+		buttons.add(buttonSelect);
+		buttons.add(buttonNoScaffold);
+		buttons.add(buttonExpand);
+		buttons.add(buttonTable);
+
+		JPanel south = new JPanel();
+		south.setLayout(new BoxLayout(south, BoxLayout.Y_AXIS));
+		south.setBorder(BorderFactory.createEmptyBorder(gap, gap, gap, gap));
+		for (JComponent c:new JComponent[] { mCheckBoxExactOnly, buttons, mLabelStatus }) {
+			c.setAlignmentX(Component.LEFT_ALIGNMENT);
+			south.add(c);
+			south.add(Box.createVerticalStrut(gap/2));
+			}
+
+		JLabel north = new JLabel("<html>"+summary+"</html>");
+		north.setBorder(BorderFactory.createEmptyBorder(gap, gap, gap, gap));
+
+		getContentPane().setLayout(new BorderLayout());
+		getContentPane().add(north, BorderLayout.NORTH);
+		getContentPane().add(new JScrollPane(mTree), BorderLayout.CENTER);
+		getContentPane().add(south, BorderLayout.SOUTH);
+
+		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		setSize(HiDPIHelper.scale(640), HiDPIHelper.scale(720));
+		setLocationRelativeTo(parent);
+		}
+
+	private DefaultMutableTreeNode createTreeNode(Node node) {
+		DefaultMutableTreeNode treeNode = new DefaultMutableTreeNode(node);
+		for (Node child:node.getChildren())
+			treeNode.add(createTreeNode(child));
+		return treeNode;
+		}
+
+	private void selectMoleculesOfChosenScaffold() {
+		TreePath path = mTree.getSelectionPath();
+		if (path == null) {
+			mLabelStatus.setText("Choose a scaffold first.");
+			return;
+			}
+		Node node = (Node)((DefaultMutableTreeNode)path.getLastPathComponent()).getUserObject();
+		boolean exact = mCheckBoxExactOnly.isSelected();
+		select(exact ? node.getExactMembers() : node.getMembers(), exact ? "exact scaffold" : "scaffold family");
+		}
+
+	/**
+	 * Replaces the table's row selection. Rows deleted since the tree was built are
+	 * simply no longer part of the table and therefore not counted.
+	 */
+	private void select(BitSet rows, String what) {
+		CompoundTableModel tableModel = mParentFrame.getTableModel();
+		for (int row=0; row<tableModel.getTotalRowCount(); row++)
+			tableModel.getTotalRecord(row).setSelection(false);
+
+		BitSet stillInTable = new BitSet();
+		java.util.IdentityHashMap<CompoundRecord,Boolean> present = new java.util.IdentityHashMap<>();
+		for (int row=0; row<tableModel.getTotalRowCount(); row++)
+			present.put(tableModel.getTotalRecord(row), Boolean.TRUE);
+
+		for (int row=rows.nextSetBit(0); row>=0; row=rows.nextSetBit(row+1)) {
+			if (present.containsKey(mRecord[row])) {
+				mRecord[row].setSelection(true);
+				stillInTable.set(row);
+				}
+			}
+		tableModel.invalidateSelectionModel();
+
+		int selected = stillInTable.cardinality();
+		String text = "Selected "+selected+" molecule"+(selected == 1 ? "" : "s")+" ("+what+").";
+		if (selected != rows.cardinality())
+			text += " "+(rows.cardinality()-selected)+" were deleted from the table meanwhile.";
+		mLabelStatus.setText(text);
+		}
+
+	/** Writes the displayed tree into a new document, so that it can be saved and exported. */
+	private void createTable() {
+		List<Node> nodes = mHierarchy.getNodesInDisplayOrder();
+		String[] title = { "Scaffold", "Parent Scaffold", "Level", "Rings", "Molecules", "Molecules With Exactly This Scaffold" };
+
+		DEFrame frame = DataWarrior.getApplication().getEmptyFrame("Scaffold Tree of "+mParentFrame.getTitle());
+		CompoundTableModel tableModel = frame.getTableModel();
+		tableModel.initializeTable(nodes.size(), title.length);
+		for (int column=0; column<title.length; column++)
+			tableModel.setColumnName(title[column], column);
+		tableModel.setColumnProperty(0, CompoundTableModel.cColumnPropertySpecialType, CompoundTableModel.cColumnTypeIDCode);
+		tableModel.setColumnProperty(1, CompoundTableModel.cColumnPropertySpecialType, CompoundTableModel.cColumnTypeIDCode);
+
+		for (int row=0; row<nodes.size(); row++) {
+			Node node = nodes.get(row);
+			tableModel.setTotalValueAt(node.getIDCode(), row, 0);
+			tableModel.setTotalValueAt(node.getParent() == null ? "" : node.getParent().getIDCode(), row, 1);
+			tableModel.setTotalValueAt(Integer.toString(node.getLevel()+1), row, 2);
+			tableModel.setTotalValueAt(Integer.toString(node.getRingCount()), row, 3);
+			tableModel.setTotalValueAt(Integer.toString(node.getMemberCount()), row, 4);
+			tableModel.setTotalValueAt(Integer.toString(node.getExactMemberCount()), row, 5);
+			}
+		tableModel.finalizeTable(CompoundTableEvent.cSpecifierDefaultFiltersAndViews, null);
+		}
+
+	/** Draws the scaffold structure with its molecule counts below. */
+	private static class ScaffoldRenderer extends JPanel implements TreeCellRenderer {
+		private final JStructureView mStructureView = new JStructureView();
+		private final JLabel mLabel = new JLabel();
+
+		private ScaffoldRenderer() {
+			setLayout(new BorderLayout());
+			setOpaque(true);
+			mStructureView.setOpaque(false);
+			mStructureView.setEnabled(false);	// plain depiction: no drag, no popup
+			mStructureView.setDisableBorder(true);
+			mLabel.setHorizontalAlignment(SwingConstants.CENTER);
+			mLabel.setFont(mLabel.getFont().deriveFont(mLabel.getFont().getSize2D()*0.9f));
+			add(mStructureView, BorderLayout.CENTER);
+			add(mLabel, BorderLayout.SOUTH);
+			setPreferredSize(new Dimension(HiDPIHelper.scale(200), HiDPIHelper.scale(82)));
+			}
+
+		@Override
+		public Component getTreeCellRendererComponent(JTree tree, Object value, boolean selected, boolean expanded,
+													  boolean leaf, int row, boolean hasFocus) {
+			Object object = ((DefaultMutableTreeNode)value).getUserObject();
+			if (object instanceof Node) {
+				Node node = (Node)object;
+				mStructureView.setIDCode(node.getIDCode());
+				String text = node.getMemberCount()+(node.getMemberCount() == 1 ? " molecule" : " molecules");
+				if (node.getExactMemberCount() != node.getMemberCount())
+					text += " ("+node.getExactMemberCount()+" exact)";
+				mLabel.setText(text);
+				}
+			// The structure view paints its own background, so the chosen scaffold is framed
+			// instead of filled to stay readable in light and dark look and feels.
+			Color highlight = UIManager.getColor("Tree.selectionBackground");
+			int width = HiDPIHelper.scale(2);
+			setBackground(tree.getBackground());
+			mLabel.setForeground(tree.getForeground());
+			setBorder(selected ? BorderFactory.createLineBorder(highlight != null ? highlight : tree.getForeground(), width)
+							   : BorderFactory.createEmptyBorder(width, width, width, width));
+			return this;
+			}
+		}
+	}

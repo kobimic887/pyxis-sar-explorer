@@ -102,6 +102,8 @@ public class DEAboutDialog extends JDialog {
 				g.setFont(g.getFont().deriveFont(Font.BOLD, (float)fontSize));
 				g.setColor(Color.WHITE);
 				g.drawString(text, x, y);
+				// GPL: a modified version must say so and keep the original attribution
+				g.drawString("Pyxis SAR Explorer - a modified version of DataWarrior (GPL v3)", x, y - 2*fontSize);
 				}
 			};
 		}

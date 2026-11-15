@@ -1,0 +1,135 @@
+name: Pyxis SAR Explorer
+
+# Builds the application, checks the Pyxis additions and makes installers.
+# Pushing a tag named pyxis-v<major>.<minor>.<patch> also publishes them as a release.
+
+on:
+  push:
+    branches: [master]
+    tags: ['pyxis-v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  APP_NAME: Pyxis SAR Explorer
+  MAIN_CLASS: com.actelion.research.datawarrior.DataWarrior
+  # java.base/jdk.internal.module is what upstream's runDataWarrior script opens
+  JAVA_OPTIONS: --add-exports=java.base/jdk.internal.module=ALL-UNNAMED
+  # every module the application needs; the JavaFX ones come from the Liberica "full" JDK
+  MODULES: java.se,jdk.unsupported,jdk.crypto.ec,jdk.charsets,jdk.localedata,jdk.accessibility,jdk.xml.dom,jdk.jsobject,jdk.zipfs,jdk.net,jdk.httpserver,javafx.base,javafx.controls,javafx.fxml,javafx.graphics,javafx.media,javafx.swing,javafx.web
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: liberica
+          java-version: '21'
+          java-package: jdk+fx
+
+      - name: Version
+        id: version
+        run: |
+          case "$GITHUB_REF" in
+            refs/tags/pyxis-v*) echo "version=${GITHUB_REF#refs/tags/pyxis-v}" >> "$GITHUB_OUTPUT" ;;
+            *) echo "version=1.0.${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT" ;;
+          esac
+
+      - name: Unit checks of the Pyxis additions
+        run: pyxis/run-tests.sh
+
+      - name: Build application
+        run: sh ./buildDataWarrior
+
+      - name: Scaffold tree window check
+        run: xvfb-run -a pyxis/run-gui-check.sh test_data/sar/simpleSAR.dwar scaffold-tree.png
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: application-jar
+          path: |
+            datawarrior_all.jar
+            scaffold-tree.png
+          retention-days: 14
+
+  installers:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            type: deb
+            extra: --linux-package-name pyxis-sar-explorer --linux-shortcut --linux-app-category science --icon linux/icons/datawarrior.png
+          - os: macos-latest
+            type: dmg
+            extra: --mac-package-name "Pyxis SAR" --mac-package-identifier com.pyxisdiscovery.sarexplorer --icon macosx/icons/datawarrior.icns
+          - os: windows-latest
+            type: msi
+            extra: --win-menu --win-shortcut --win-dir-chooser --win-upgrade-uuid 6f1c2b0e-6a0b-4f0c-9d63-5d0e7a1c2f41
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: liberica
+          java-version: '21'
+          java-package: jdk+fx
+      - uses: actions/download-artifact@v4
+        with:
+          name: application-jar
+          path: app-input
+
+      - name: Make installer
+        shell: bash
+        run: |
+          rm -f app-input/scaffold-tree.png
+          jpackage --type ${{ matrix.type }} \
+            --name "$APP_NAME" \
+            --app-version "${{ needs.build.outputs.version }}" \
+            --vendor "Pyxis Discovery" \
+            --description "Scaffold and SAR analysis. A modified version of DataWarrior (GPL v3)." \
+            --copyright "DataWarrior (C) Thomas Sander and Idorsia Pharmaceuticals Ltd.; Pyxis additions (C) Pyxis Discovery. GNU GPL v3." \
+            --license-file LICENSE \
+            --input app-input \
+            --main-jar datawarrior_all.jar \
+            --main-class "$MAIN_CLASS" \
+            --java-options "$JAVA_OPTIONS" \
+            --add-modules "$MODULES" \
+            --dest installers \
+            ${{ matrix.extra }}
+          ls -l installers
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.type }}
+          path: installers/*
+          retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/pyxis-v')
+    needs: [build, installers]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: installer-*
+          path: installers
+          merge-multiple: true
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" installers/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Pyxis SAR Explorer ${{ needs.build.outputs.version }}" \
+            --notes "Installers for Windows (.msi), macOS (.dmg) and Linux (.deb). Pyxis SAR Explorer is a modified version of DataWarrior, licensed under the GNU GPL v3; the complete source is this repository at this tag. The macOS and Windows installers are not code-signed, so the system asks for confirmation on first start."

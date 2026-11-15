@@ -152,7 +152,7 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 					jMenuChemAddInchi,jMenuChemAddInchiKey,jMenuChemAddCanonicalCode,jMenuChemCreate2DCoords,jMenuChemCreate3DCoords,jMenuChemCalculateConformerEnergy,
 					jMenuChemSuperposeFlexible,jMenuChemSuperposeRigid,jMenuChemDock, jMenuChem3DFragmentsBuildLib, jMenuChem3DFragmentsReplace,
 					jMenuChemAddSubstructureCount,jMenuChemAddStructureFromName, jMenuChemDecomposeRGroups,jMenuChemPerformReaction,jMenuChemInteractiveSARTable,
-					jMenuChemAnalyzeScaffolds,jMenuChemAnalyzeCliffs,jMenuChemMatchFile,jMenuChemSelectDiverse,
+					jMenuChemAnalyzeScaffolds,jMenuChemScaffoldTree,jMenuChemSubstituentPairs,jMenuChemAnalyzeCliffs,jMenuChemMatchFile,jMenuChemSelectDiverse,
 			jMenuChemClusterHierarchical, jMenuChemClusterBitBIRCH,jMenuChemExtractFragment,jMenuChemMapReactions,jMenuChemCompareReactionMapping,jMenuChemAddReactionSmiles,
 					jMenuChemCreateGenericTautomers,jMenuChemCompareDescriptorSimilarityDistribution,jMenuChemGenerateRandomMolecules,
 					jMenuChemCreateTaggedSmiles,jMenuChemAddDockingScore,
@@ -926,6 +926,8 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuChemPerformReaction = new JMenuItem();
 		jMenuChemInteractiveSARTable = new JMenuItem();
 		jMenuChemAnalyzeScaffolds = new JMenuItem();
+		jMenuChemScaffoldTree = new JMenuItem();
+		jMenuChemSubstituentPairs = new JMenuItem();
 		jMenuChemAnalyzeCliffs = new JMenuItem();
 		jMenuChemMatchFile = new JMenuItem();
 		jMenuChemSelectDiverse = new JMenuItem();
@@ -1015,6 +1017,10 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuChemInteractiveSARTable.addActionListener(this);
 		jMenuChemAnalyzeScaffolds.setText("Analyse Scaffolds...");
 		jMenuChemAnalyzeScaffolds.addActionListener(this);
+		jMenuChemScaffoldTree.setText("Build Scaffold Tree...");
+		jMenuChemScaffoldTree.addActionListener(this);
+		jMenuChemSubstituentPairs.setText("Analyse Substituent Pairs...");
+		jMenuChemSubstituentPairs.addActionListener(this);
 		jMenuChemAnalyzeCliffs.setText("Analyse Similarity/Activity Cliffs...");
 		jMenuChemAnalyzeCliffs.addActionListener(this);
 		jMenuChemMatchFile.setText("Find Similar Compounds In File...");
@@ -1120,6 +1126,8 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 			jMenuChem.add(jMenuChemInteractiveSARTable);
 		jMenuChem.add(jMenuChemPerformReaction);
 		jMenuChem.add(jMenuChemAnalyzeScaffolds);
+		jMenuChem.add(jMenuChemScaffoldTree);
+		jMenuChem.add(jMenuChemSubstituentPairs);
 		jMenuChem.addSeparator();
 		jMenuChem.add(jMenuChemAnalyzeCliffs);
 		jMenuChem.addSeparator();
@@ -1407,7 +1415,7 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuHelpShortcuts = new JMenuItem();
 		jMenuHelpAbout = new JMenuItem();
 		if (!mApplication.isMacintosh()) {
-			jMenuHelpAbout.setText("About DataWarrior...");
+			jMenuHelpAbout.setText("About Pyxis SAR Explorer...");
 			jMenuHelpAbout.addActionListener(this);
 			}
 		jMenuHelpHelp.setText(MENU_NAME_HELP);
@@ -1453,7 +1461,8 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 			prefs.put(DEUpdateHandler.PREFERENCES_KEY_UPDATE_MODE, DEUpdateHandler.PREFERENCES_UPDATE_MODE_CODE[DEUpdateHandler.PREFERENCES_UPDATE_MODE_ASK]);
 		int mode = AbstractTask.findListIndex(modeString, DEUpdateHandler.PREFERENCES_UPDATE_MODE_CODE, DEUpdateHandler.PREFERENCES_UPDATE_MODE_ASK);
 
-		boolean isSkipped = "true".equals(System.getProperty("skipUpdates"));
+		boolean isSkipped = "true".equals(System.getProperty("skipUpdates"))
+						 || !"true".equals(System.getProperty("pyxisFollowUpstreamUpdates"));	// see DEUpdateHandler
 
 		jMenuHelpUpdate.setText("Update Mode");
 		for (int i=0; i<DEUpdateHandler.PREFERENCES_UPDATE_MODE_CODE.length; i++) {
@@ -1920,6 +1929,10 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 					new DEInteractiveSARDialog(mParentFrame, mTableModel, idcodeColumn);
 			} else if (source == jMenuChemAnalyzeScaffolds)
 				new DETaskAnalyseScaffolds(mParentFrame).defineAndRun();
+			else if (source == jMenuChemScaffoldTree)
+				new com.actelion.research.datawarrior.pyxis.DETaskBuildScaffoldTree(mParentFrame).defineAndRun();
+			else if (source == jMenuChemSubstituentPairs)
+				new com.actelion.research.datawarrior.pyxis.DETaskAnalyseSubstituentPairs(mParentFrame).defineAndRun();
 			else if (source == jMenuChemAnalyzeCliffs)
 				new DETaskAnalyseActivityCliffs(mParentFrame).defineAndRun();
 			else if (source == jMenuChemMatchFile)

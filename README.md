@@ -1,3 +1,47 @@
+## Pyxis SAR Explorer
+
+*Pyxis SAR Explorer* is a modified version of *DataWarrior* published by Pyxis Discovery
+under the same license (GNU GPL v3 or later). Everything DataWarrior does is still here;
+the original README follows below. It is an independent program and makes no claim to
+reproduce the results of any other SAR software.
+
+### What Pyxis added
+Both are in the **Chemistry** menu and can be recorded in macros.
+
+* **Build Scaffold Tree...** (`buildScaffoldTree`) opens a window with a hierarchical tree of
+  the scaffolds of all molecules. Small scaffolds shared by many molecules are at the top,
+  larger and rarer ones below them, each with its molecule count. Double click a scaffold
+  to select its molecules in the table. *Tree As New Table* writes the tree into a new
+  document for saving and export.
+  Method: every molecule is reduced to its Murcko scaffold without stereo information; the
+  parents of a scaffold are obtained by removing one ring at a time, as long as the rest
+  stays connected; a scaffold is shown below the parent that covers the most molecules.
+  Ring-free molecules have no scaffold and are reported separately.
+* **Analyse Substituent Pairs...** (`analyseSubstituentPairs`) lists all pairs of molecules
+  that share a scaffold and differ at exactly one R-group position, with both values of a
+  chosen numerical column, their difference and their ratio. Run *Decompose R-Groups...*
+  first; it creates the Scaffold and R1, R2, ... columns this analysis reads.
+
+### What Pyxis changed
+* Window titles and the About text name the program Pyxis SAR Explorer.
+* The program does not contact the DataWarrior update server and does not update itself
+  from it, because that would replace it with an unmodified DataWarrior.
+
+### Installers
+`.github/workflows/pyxis-build.yml` builds the application and makes installers for
+Windows (.msi), macOS (.dmg) and Linux (.deb) with a bundled Java runtime. A tag named
+`pyxis-v1.2.3` publishes them as a GitHub release. They are not code-signed.
+
+### Checking a change
+```
+pyxis/run-tests.sh                 # scaffold tree and pair logic; any JDK 21+
+./buildDataWarrior                 # needs a JDK 21+ that includes JavaFX
+pyxis/run-gui-check.sh test_data/sar/simpleSAR.dwar tree.png
+```
+The source of the additions is in `src/com/actelion/research/datawarrior/pyxis`.
+
+---
+
 ## DataWarrior
 *DataWarrior* is a program for interactive data analysis and visualization. While it is
 widely used by data analysts in general, it is particular useful for cheminformaticians,
