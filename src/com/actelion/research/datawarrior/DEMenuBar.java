@@ -1130,6 +1130,9 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuChem.add(jMenuChemDecomposeRGroups);
 		JMenuItem rGroupCopy = new JMenuItem("Create R-Group Table...");
 		rGroupCopy.addActionListener(e -> new com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupTable(mParentFrame).defineAndRun());
+		JMenuItem rGroupGrid = new JMenuItem("Create R-Group Grid...");
+		rGroupGrid.addActionListener(e -> new com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupGrid(mParentFrame).defineAndRun());
+		jMenuChem.add(rGroupGrid);
 		jMenuChem.add(rGroupCopy);
 
 		if (System.getProperty("development") != null)

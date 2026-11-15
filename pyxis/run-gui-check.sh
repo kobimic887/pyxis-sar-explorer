@@ -22,3 +22,15 @@ javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/ScaffoldTreeGu
 java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/prefs" \
   --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
   -classpath "datawarrior_all.jar:$OUT" ScaffoldTreeGuiCheck "$OUT/tree.dwam" "$2"
+
+cat > "$OUT/grid.dwam" <<EOF
+<macro name="pyxis-grid">
+<task name="openFile">
+fileName=$PROJECT
+</task>
+</macro>
+EOF
+javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/RGroupGridGuiCheck.java
+java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/grid-prefs" \
+  --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+  -classpath "datawarrior_all.jar:$OUT" RGroupGridGuiCheck "$OUT/grid.dwam" "$2"

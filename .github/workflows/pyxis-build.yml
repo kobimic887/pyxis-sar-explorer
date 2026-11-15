@@ -55,8 +55,8 @@ jobs:
           jar --update --file datawarrior_all.jar -C version-resources resources/pyxis-version.txt
           java -Djava.awt.headless=true -cp datawarrior_all.jar pyxis/RenderAbout.java about-pyxis.png "${{ steps.version.outputs.version }}"
 
-      - name: Scaffold tree window check
-        run: xvfb-run -a pyxis/run-gui-check.sh test_data/sar/simpleSAR.dwar scaffold-tree.png
+      - name: Scaffold tree and R-group grid GUI checks
+        run: xvfb-run -a pyxis/run-gui-check.sh test_data/sar/SARTestWithEZ.dwar scaffold-tree.png
 
       - uses: actions/upload-artifact@v4
         with:
@@ -64,6 +64,8 @@ jobs:
           path: |
             datawarrior_all.jar
             scaffold-tree*.png
+            scaffold-tree-grid.dwar
+            scaffold-tree-grid.docx
             about-pyxis.png
           retention-days: 14
 
