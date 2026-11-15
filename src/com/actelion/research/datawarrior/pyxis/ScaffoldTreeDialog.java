@@ -37,6 +37,8 @@ import java.util.List;
  */
 public class ScaffoldTreeDialog extends JDialog {
 	private final DEFrame mParentFrame;
+	private final int mMinMembers;
+	private boolean mRestoring;
 	private final String mStructureColumnName;
 	private final java.util.Map<Node,String> mTemplates = new java.util.IdentityHashMap<>();
 	private final ScaffoldHierarchy mHierarchy;
@@ -52,6 +54,7 @@ public class ScaffoldTreeDialog extends JDialog {
 							  String structureColumnName, int minMembers, int emptyRows) {
 		super(parent, "Scaffold Tree of '"+structureColumnName+"' - "+parent.getTitle(), false);
 		mParentFrame = parent;
+		mMinMembers = minMembers;
 		mStructureColumnName = structureColumnName;
 		mHierarchy = hierarchy;
 		mRecord = record;
@@ -152,9 +155,41 @@ public class ScaffoldTreeDialog extends JDialog {
 		getContentPane().add(new JScrollPane(mTree), BorderLayout.CENTER);
 		getContentPane().add(south, BorderLayout.SOUTH);
 
+		// Restore only the matching structure column; memberships always use current records.
+		Object saved = source.getExtensionData(ScaffoldSession.NAME);
+		mRestoring = true;
+		if (saved instanceof java.util.Properties && structureColumnName.equals(((java.util.Properties)saved).getProperty("structureColumn"))) {
+			java.util.Properties p = (java.util.Properties)saved;
+			for (String template:p.getProperty("userScaffolds", "").split("\\t"))
+				if (!template.isEmpty()) addEditedScaffold(new com.actelion.research.chem.IDCodeParser().getCompactMolecule(template));
+			selectAvailable(mValue, p.getProperty("statisticsColumn", "<count only>"));
+			selectAvailable(mSubset, p.getProperty("subset", "All rows"));
+			}
+		mRestoring = false;
+		refreshStatistics();
+		mValue.addActionListener(e -> saveSession());
+		mSubset.addActionListener(e -> saveSession());
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setSize(HiDPIHelper.scale(640), HiDPIHelper.scale(720));
 		setLocationRelativeTo(parent);
+		}
+
+	private static void selectAvailable(JComboBox<String> box, String value) {
+		for (int i=0; i<box.getItemCount(); i++) if (value.equals(box.getItemAt(i))) box.setSelectedIndex(i);
+		}
+
+	private void saveSession() {
+		if (mRestoring) return;
+		java.util.Properties p = new java.util.Properties();
+		p.setProperty("structureColumn", mStructureColumnName);
+		p.setProperty("minMolecules", Integer.toString(mMinMembers));
+		p.setProperty("statisticsColumn", (String)mValue.getSelectedItem());
+		p.setProperty("subset", (String)mSubset.getSelectedItem());
+		java.util.List<String> templates = new java.util.ArrayList<>();
+		for (Node n:mHierarchy.getNodesInDisplayOrder()) if (n.isUserDefined()) templates.add(mTemplates.get(n));
+		p.setProperty("userScaffolds", String.join("\t", templates));
+		CompoundTableModel model = mParentFrame.getTableModel();
+		if (!p.equals(model.getExtensionData(ScaffoldSession.NAME))) model.setExtensionData(ScaffoldSession.NAME, p);
 		}
 
 	private Node chosenNode() {
@@ -235,6 +270,7 @@ public class ScaffoldTreeDialog extends JDialog {
 			}
 		for (Node node:mHierarchy.getNodesInDisplayOrder())
 			mStatistics.put(node, ScaffoldHierarchy.statistics(node.getMembers(), subset, values));
+		saveSession();
 		mTree.repaint();
 		mLabelStatus.setText("Snapshot: "+choice+"; "+mValue.getSelectedItem()+". Refresh after changing filters or data. Finite values only.");
 		}

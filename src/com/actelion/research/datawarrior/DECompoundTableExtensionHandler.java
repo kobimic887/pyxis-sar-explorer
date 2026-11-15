@@ -30,7 +30,7 @@ import java.util.ArrayList;
 public class DECompoundTableExtensionHandler implements CompoundTableConstants,CompoundTableExtensionHandler {
 	public static final int ID_FILE_EXPLANATION = 0;
 	public static final int ID_MACRO = 1;
-	private static final String[] SUPPORTED_NAME = { cExtensionNameFileExplanation, cExtensionNameMacroList };
+	private static final String[] SUPPORTED_NAME = { cExtensionNameFileExplanation, cExtensionNameMacroList, "pyxisScaffoldTree" };
 
 	@Override
 	public int getID(String name) {
@@ -48,6 +48,8 @@ public class DECompoundTableExtensionHandler implements CompoundTableConstants,C
 	@SuppressWarnings("unchecked")
 	@Override
 	public void writeData(String name, Object data, BufferedWriter writer) throws IOException {
+		if (name.equals("pyxisScaffoldTree"))
+			com.actelion.research.datawarrior.pyxis.ScaffoldSession.write(writer, (java.util.Properties)data);
 		if (name.equals(cExtensionNameFileExplanation))
 			writeExplanation(writer, (String)data);
 		if (name.equals(cExtensionNameMacroList))
@@ -56,6 +58,8 @@ public class DECompoundTableExtensionHandler implements CompoundTableConstants,C
 
 	@Override
 	public Object readData(String name, BufferedReader reader) {
+		if (name.equals("pyxisScaffoldTree"))
+			return com.actelion.research.datawarrior.pyxis.ScaffoldSession.read(reader);
 		if (name.equals(cExtensionNameFileExplanation))
 			return readExplanation(reader);
 		if (name.equals(cExtensionNameMacroList))

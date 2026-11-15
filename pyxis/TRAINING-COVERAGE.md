@@ -12,14 +12,14 @@ they were not all manually retested in this change.
 | Edit table text and molecule cells | Supported | Existing Table View cell editor. |
 | Identify scaffolds with default settings | Supported | Chemistry → Build Scaffold Tree. Murcko reduction, stereo removed, connected one-ring-removal parents; independent method. |
 | Hierarchy, counts, double-click family selection | Supported | Tree plus exact/family selection and derived tree table. |
-| Edit scaffold structure | Supported | Scaffold context menu → Edit Scaffold. Adds a user-defined root with full-molecule substructure matches; original nodes stay intact. Nodes are window-local; export retains their identity/provenance, not an editable tree session. |
+| Edit scaffold structure | Supported | Scaffold context menu → Edit Scaffold. Adds a user-defined root with full-molecule substructure matches; original nodes stay intact. Tree configuration and user nodes persist in the project; Build Scaffold Tree offers the saved settings on reopen and recomputes memberships. Missing statistics columns/lists fall back to count-only/all rows. |
 | Orient molecules relative to scaffold | Supported | Context menu → Re-orient Family. Existing DataWarrior template coordinate generation, limited to family molecule keys; records a macro. Double-click continues to select molecules. |
 | Table heatmap | Supported | Existing column-header Set Background Color control. |
 | Reorder, format and hide columns | Supported | Existing table/header controls. |
 | Lock columns while horizontally scrolling | Missing | No frozen-column API in DETable/DETableView or OpenChemLib JTableWithRowNumbers. The latter owns the scroll-pane row header. A split-table implementation would need synchronized headers, rendering/highlights, selection, row sizes, filters, hidden columns, editing and export. Deferred under the instruction not to rewrite the table. |
 | Export visible table to MS Word | Supported | File → Export → Visible Table to MS Word. DOCX with embedded PNG structures; caps of 1,000 rows, 30 columns, 10,000 cells; no heatmap/style reproduction. |
 | Numeric subsets, marking and table filtering | Supported | Existing numerical filters, selection and named row lists. Controls differ from the training text. |
-| Scaffold subset statistics | Supported | Pick a numeric column plus all/visible/list rows, then Refresh. Count includes missing values; mean/median use finite values. Window controls are not macro recorded. |
+| Scaffold subset statistics | Supported | Pick a numeric column plus all/visible/list rows, then Refresh. Count includes missing values; mean/median use finite values. Statistics column/subset persist in the document; window controls are not macro recorded. |
 | Data grid with values and heatmap blocks | Partly | Existing Structure View grid with column labels and coloring. No new dedicated per-value heatmap-block controls matching the training workflow. |
 | R-Group table | Partly | New macro task creates a derived document for one decomposed scaffold, with R1..Rn, molecule, ID and selected values. Edits cannot affect source; it is not an intrinsically read-only, live-linked view. |
 | Scaffold-centric single-position substituent pairs | Supported | Existing pair analysis on decomposed R columns, optional values/difference/ratio. Output is a derived document, not a live linked analysis view; no combined molecular difference drawing. |
@@ -29,6 +29,9 @@ they were not all manually retested in this change.
 | Dock/move views and use one to filter another | Partly | Existing dockable views and explicit graphical filter/lasso linking. This uses shared row visibility rather than independent SARvision “Subset 2” panels per view. |
 
 ## Verification added
+
+- `ScaffoldSessionTest`: Unicode/multiline property roundtrip, malformed and truncated refusal.
+- `ScaffoldTreeGuiCheck`: saves a real `.dwar`, reopens it through the app loader, compares all five session inputs, rebuilds the tree and checks restored user scaffolds; renders reopened task/tree PNGs.
 
 - `ScaffoldHierarchyTest`: subset statistics, missing/nonfinite values and empty subset;
   user-defined full-molecule substructure membership, plus existing scaffold checks.

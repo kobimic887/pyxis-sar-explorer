@@ -162,10 +162,57 @@ public class ScaffoldTreeGuiCheck {
 		int coordinates = model.getChildColumn(structure, CompoundTableModel.cColumnType2DCoordinates);
 		if (coordinates < 0 || model.getTotalValueAt(0, coordinates).isEmpty()) fail("orientation did not write coordinates");
 		System.out.println("User scaffold added/exported; template orientation preserved all "+original.length+" molecule identities");
+		checkPersistence((DEFrame)d.getOwner());
 		checkPairTask();
 		System.out.println("ScaffoldTreeGuiCheck passed");
 		System.exit(0);
 		}
+
+    private static void checkPersistence(DEFrame source) throws Exception {
+        String name = com.actelion.research.datawarrior.pyxis.ScaffoldSession.NAME;
+        SwingUtilities.invokeAndWait(() -> {
+            for (Window w:Window.getWindows()) if (w instanceof ScaffoldTreeDialog && w.getOwner()==source) {
+                List<Component> controls=new ArrayList<>(); collect((Container)w,controls);
+                for (Component c:controls) if (c instanceof JComboBox) {
+                    JComboBox<?> box=(JComboBox<?>)c;
+                    if (box.getItemCount()>1) box.setSelectedIndex(1);
+                }
+            }
+        });
+        java.util.Properties before = (java.util.Properties)source.getTableModel().getExtensionData(name);
+        if (before == null || before.getProperty("userScaffolds", "").isEmpty()) fail("session not captured");
+        File file = File.createTempFile("pyxis-session-", ".dwar"); file.deleteOnExit();
+        java.util.concurrent.CountDownLatch saved = new java.util.concurrent.CountDownLatch(1);
+        com.actelion.research.table.CompoundTableSaver saver = new com.actelion.research.table.CompoundTableSaver(source, source.getTableModel(), source.getMainFrame().getMainPane().getTable()) {
+            public void finalStatus(File result) { if (result == null) fail("save failed"); saved.countDown(); }
+        };
+        saver.saveNative(new com.actelion.research.datawarrior.DERuntimeProperties(source.getMainFrame()), file, com.actelion.research.table.CompoundTableSaver.ROW_MASK_ALL, true);
+        if (!saved.await(30, java.util.concurrent.TimeUnit.SECONDS)) fail("save timeout");
+        DEFrame reopened = new com.actelion.research.datawarrior.task.file.DETaskOpenFile(DataWarrior.getApplication()).openFile(file, new java.util.Properties());
+        if (!before.equals(reopened.getTableModel().getExtensionData(name))) fail("saved/reopened session differs");
+        var task = new com.actelion.research.datawarrior.pyxis.DETaskBuildScaffoldTree(reopened);
+        SwingUtilities.invokeAndWait(() -> {
+            JComponent content = task.createDialogContent(); task.setDialogConfiguration(task.getRecentConfiguration());
+            if (!before.getProperty("minMolecules").equals(task.getDialogConfiguration().getProperty("minMolecules"))) throw new AssertionError("reopen default minimum");
+            renderPanel(reopened, content, "reopened-settings");
+        });
+        task.executeAsSubtask(task.getRecentConfiguration(), null);
+        SwingUtilities.invokeAndWait(() -> {});
+        SwingUtilities.invokeAndWait(() -> {
+            for (Window w:Window.getWindows()) if (w instanceof ScaffoldTreeDialog && w.getOwner()==reopened) {
+                List<Component> controls = new ArrayList<>(); collect((Container)w, controls);
+                for (Component c:controls) if (c instanceof JTree) {
+                    DefaultMutableTreeNode root=(DefaultMutableTreeNode)((JTree)c).getModel().getRoot();
+                    boolean user=false;
+                    for (int n=0;n<root.getChildCount();n++) if (((ScaffoldHierarchy.Node)((DefaultMutableTreeNode)root.getChildAt(n)).getUserObject()).isUserDefined()) user=true;
+                    if (!user) throw new AssertionError("restored user scaffold missing");
+                }
+                try { BufferedImage image=new BufferedImage(w.getWidth(),w.getHeight(),BufferedImage.TYPE_INT_RGB); Graphics2D g=image.createGraphics(); w.paint(g); g.dispose(); ImageIO.write(image,"png",new File(picturePrefix+"-reopened.png")); } catch(Exception e) { throw new RuntimeException(e); }
+            }
+        });
+        if (!before.equals(reopened.getTableModel().getExtensionData(name))) fail("rebuilt session differs");
+        System.out.println("Scaffold session: saved .dwar, reopened, compared all properties and rebuilt user scaffolds");
+    }
 
 	private static void checkPairTask() throws Exception {
 		DEFrame input = DataWarrior.getApplication().getEmptyFrame("Hopping fixture");

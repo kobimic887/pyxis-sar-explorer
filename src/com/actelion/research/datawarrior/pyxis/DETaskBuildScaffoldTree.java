@@ -44,6 +44,12 @@ public class DETaskBuildScaffoldTree extends ConfigurableTask {
 		}
 
 	@Override
+	public Properties getRecentConfiguration() {
+		Object saved = mTableModel.getExtensionData(ScaffoldSession.NAME);
+		return saved instanceof Properties ? (Properties)((Properties)saved).clone() : super.getRecentConfiguration();
+		}
+
+	@Override
 	public String getTaskName() {
 		return TASK_NAME;
 		}

@@ -22,7 +22,10 @@ The analysis tasks are in the **Chemistry** menu and can be recorded in macros.
   infinite values do not enter mean/median. Tree As New Table includes the snapshot;
   refresh again after filters/data change. Right-click a scaffold to edit a copy in the
   structure editor; the added user-defined root matches full molecules by substructure
-  (not Murcko ancestry) and is marked in the tree/export. These nodes live in this window.
+  (not Murcko ancestry) and is marked in the tree/export. The project saves user-defined nodes, structure column, minimum family size,
+  statistics column and subset choice. Reopen the `.dwar`, then Build Scaffold Tree
+  to rebuild the same configuration against the current molecules. Missing value
+  columns or row lists fall back to count-only/all rows.
   Re-orient Family uses DataWarrior's Generate 2D-Atom-Coordinates template mechanism,
   limited to the family molecule keys; it changes coordinates, not chemistry. This action
   is macro-recordable, including the scaffold coordinates and family keys. These window controls are not macro recorded.
