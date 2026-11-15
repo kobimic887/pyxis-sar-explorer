@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Run the actual jpackage launcher; retain the macro, logs and checked CSV for CI."""
+import argparse
 import csv
 import os
 from pathlib import Path
@@ -9,8 +10,13 @@ import subprocess
 import sys
 
 root = Path(__file__).resolve().parent.parent
-out = root / 'packaged-check'
-out.mkdir(exist_ok=True)
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('launcher')
+parser.add_argument('--document', action='store_true', help='Launch a .dwar with an embedded autostart macro')
+parser.add_argument('--evidence-dir', default='packaged-check')
+args = parser.parse_args()
+out = root / args.evidence_dir
+out.mkdir(parents=True, exist_ok=True)
 macro = out / 'tasks.dwam'
 pairs = out / 'pairs.csv'
 pairs.unlink(missing_ok=True)
@@ -50,10 +56,25 @@ saveChanges=no
 </task>
 </macro>
 ''', encoding='utf-8')
-launcher = Path(sys.argv[1]).resolve()
+launch_file = macro
+if args.document:
+    # The macro acts on the document loaded by the launcher, without an openFile task.
+    # Thus a nonempty tree/export proves the .dwar argument reached the file loader.
+    tasks = re.sub(r'<task name="openFile">.*?</task>\n', '', macro.read_text(), flags=re.S)
+    tasks = tasks.replace('<macro name="packaged-pyxis-check">',
+                          '<macro name="packaged-pyxis-check" auto-start="true">')
+    document = (root / 'test_data/sar/SARTestWithEZ.dwar').read_text()
+    document, count = re.subn(r'<datawarrior macroList>.*?</datawarrior macroList>',
+                             lambda _: '<datawarrior macroList>\n' + tasks + '</datawarrior macroList>',
+                             document, count=1, flags=re.S)
+    if count != 1:
+        raise RuntimeError('Fixture lacks its expected macro list')
+    launch_file = out / 'launch-document.dwar'
+    launch_file.write_text(document, encoding='utf-8')
+launcher = Path(args.launcher).resolve()
 print(f'Launching packaged application: {launcher}', flush=True)
 with (out / 'launcher.log').open('w', encoding='utf-8') as log:
-    process = subprocess.Popen([str(launcher), macro.as_posix()], stdout=log,
+    process = subprocess.Popen([str(launcher), launch_file.as_posix()], stdout=log,
                                stderr=subprocess.STDOUT, start_new_session=os.name != 'nt')
     try:
         # Popen.wait waits for GUI-subsystem executables too; shell invocation alone does not.
@@ -83,3 +104,6 @@ with pairs.open(encoding='utf-8-sig', newline='') as stream:
     if not rows or not all(row['Position'] and row['Scaffold'] for row in rows):
         raise RuntimeError('Substituent-pair export has no valid data rows')
 print(f'PASS: packaged Build Scaffold Tree displayed; Analyse Substituent Pairs exported {len(rows)} pairs')
+
+if args.document:
+    print('PASS: .dwar launch argument loaded document and executed its embedded macro')

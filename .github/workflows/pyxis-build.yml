@@ -114,7 +114,11 @@ jobs:
             --main-class "$MAIN_CLASS" \
             --java-options "$JAVA_OPTIONS" \
             --add-modules "$MODULES" \
+            --file-associations pyxis/dwar.properties \
+            --file-associations pyxis/dwam.properties \
+            --file-associations pyxis/dwat.properties \
             --icon "pyxis/icons/pyxis.${{ runner.os == 'macOS' && 'icns' || runner.os == 'Windows' && 'ico' || 'png' }}" \
+            ${{ runner.os == 'macOS' && '--mac-package-identifier com.pyxisdiscovery.sarexplorer' || '' }} \
             --dest app-image
 
       - name: Run packaged Pyxis tasks (Linux)
@@ -125,6 +129,15 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: python pyxis/check-packaged-app.py "app-image/$APP_NAME/$APP_NAME.exe"
+
+      - name: Open packaged document (Linux)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a python3 pyxis/check-packaged-app.py "app-image/$APP_NAME/bin/$APP_NAME" --document --evidence-dir packaged-check/document
+
+      - name: Open packaged document (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: python pyxis/check-packaged-app.py "app-image/$APP_NAME/$APP_NAME.exe" --document --evidence-dir packaged-check/document
 
       - name: Packaged launch evidence
         if: always()
@@ -146,6 +159,9 @@ jobs:
             --description "Scaffold and SAR analysis. A modified version of DataWarrior (GPL v3)." \
             --copyright "DataWarrior (C) Thomas Sander and Idorsia Pharmaceuticals Ltd.; Pyxis additions (C) Pyxis Discovery. GNU GPL v3." \
             --license-file LICENSE \
+            --file-associations pyxis/dwar.properties \
+            --file-associations pyxis/dwam.properties \
+            --file-associations pyxis/dwat.properties \
             --app-image "app-image/$APP_NAME${{ runner.os == 'macOS' && '.app' || '' }}" \
             --dest installers \
             ${{ matrix.extra }}
