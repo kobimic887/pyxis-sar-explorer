@@ -268,6 +268,22 @@ public class DETablePopupMenu extends JPopupMenu implements ActionListener {
 
 		addSeparator();
 
+		// Pyxis: keep the leftmost columns in view while scrolling horizontally
+		final int viewColumn = tableView.getTable().convertTotalColumnIndexToView(column);
+		final int lockedCount = com.actelion.research.datawarrior.pyxis.LockedColumns.getLockedCount(tableView);
+		if (viewColumn != -1 && viewColumn+1 != lockedCount) {
+			JMenuItem lockItem = new JMenuItem("Lock Columns Up To '"+mTableModel.getColumnTitle(column)+"'");
+			lockItem.addActionListener(e -> com.actelion.research.datawarrior.pyxis.LockedColumns.setLockedCount(tableView, tableView.getTable(), viewColumn+1));
+			add(lockItem);
+			}
+		if (lockedCount != 0) {
+			JMenuItem unlockItem = new JMenuItem("Unlock Columns");
+			unlockItem.addActionListener(e -> com.actelion.research.datawarrior.pyxis.LockedColumns.setLockedCount(tableView, tableView.getTable(), 0));
+			add(unlockItem);
+			}
+
+		addSeparator();
+
 		if (selectionCount > 1)
 			addItem(HIDE_SELECTED);
 		addItem(HIDE+mTableModel.getColumnTitle(column)+"'");

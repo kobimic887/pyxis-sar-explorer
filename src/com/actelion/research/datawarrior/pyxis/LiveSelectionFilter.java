@@ -33,8 +33,10 @@ import java.util.WeakHashMap;
  * points the chosen views at it. No other view is affected, because the restriction is a
  * property of the individual view and not a table filter.
  *
- * A selection made inside a filtered view is not followed. Otherwise clicking one marker
- * in the filtered view would immediately remove all others from it.
+ * A selection made with the mouse inside a filtered view is not followed. Otherwise
+ * clicking one marker in the filtered view would immediately remove all others from it.
+ * Only pressing and dragging in that view counts; a pointer that merely rests over it
+ * while the selection is changed elsewhere does not.
  *
  * After saving and reopening, a view stays restricted to the saved list, but the list no
  * longer follows the selection until the option is switched on again.
@@ -47,7 +49,9 @@ public class LiveSelectionFilter implements ListSelectionListener {
 	private final CompoundTableModel mTableModel;
 	private final ListSelectionModel mSelectionModel;
 	private final List<WeakReference<JVisualization>> mViews = new ArrayList<>();
+	private final java.util.WeakHashMap<JVisualization,java.awt.event.MouseAdapter> mMouseTrackers = new java.util.WeakHashMap<>();
 	private String mListName;
+	private int mSelectingInFilteredView;	// number of filtered views with a mouse button currently down
 
 	private LiveSelectionFilter(CompoundTableModel tableModel, ListSelectionModel selectionModel) {
 		mTableModel = tableModel;
@@ -97,8 +101,22 @@ public class LiveSelectionFilter implements ListSelectionListener {
 		CompoundTableListHandler listHandler = mTableModel.getListHandler();
 		if (getListIndex() == CompoundTableListHandler.LISTINDEX_NONE)
 			mListName = listHandler.createList(LIST_NAME);
-		if (!contains(view))
+		if (!contains(view)) {
 			mViews.add(new WeakReference<>(view));
+			java.awt.event.MouseAdapter tracker = new java.awt.event.MouseAdapter() {
+				private boolean mDown;
+				@Override public void mousePressed(java.awt.event.MouseEvent e) {
+					if (!mDown) { mDown = true; mSelectingInFilteredView++; }
+					}
+				@Override public void mouseReleased(java.awt.event.MouseEvent e) {
+					// the view applies its selection while handling this same release,
+					// so the flag is cleared only after all handlers of the event ran
+					if (mDown) { mDown = false; javax.swing.SwingUtilities.invokeLater(() -> mSelectingInFilteredView--); }
+					}
+				};
+			view.addMouseListener(tracker);
+			mMouseTrackers.put(view, tracker);
+			}
 		copySelectionToList();
 		view.setLocalExclusionList(getListIndex());
 		}
@@ -111,6 +129,9 @@ public class LiveSelectionFilter implements ListSelectionListener {
 			}
 		if (view.getLocalExclusionList() == getListIndex())
 			view.setLocalExclusionList(CompoundTableListHandler.LISTINDEX_NONE);
+		java.awt.event.MouseAdapter tracker = mMouseTrackers.remove(view);
+		if (tracker != null)
+			view.removeMouseListener(tracker);
 
 		if (mViews.isEmpty()) {
 			mSelectionModel.removeListSelectionListener(this);
@@ -135,11 +156,9 @@ public class LiveSelectionFilter implements ListSelectionListener {
 				continue;
 				}
 			hasView = true;
-			if (view.isShowing() && view.getMousePosition() != null)
-				return;	// selection is being made inside a filtered view: keep what it shows
 			}
 
-		if (hasView)
+		if (hasView && mSelectingInFilteredView <= 0)	// else: selection is being made inside a filtered view
 			copySelectionToList();
 		}
 

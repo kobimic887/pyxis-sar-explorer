@@ -332,7 +332,7 @@ public class DETableView extends JScrollPane
 				if (column != -1) {
 					JPopupMenu popup = new DETablePopupMenu(mParentFrame, mParentPane, this, column);
 					if (popup.getComponentCount() != 0)
-						popup.show(mTable.getTableHeader(), e.getX(), e.getY());
+						popup.show(mTable.getTableHeader(), e.getX() + com.actelion.research.datawarrior.pyxis.LockedColumns.popupShift(e), e.getY());	// Pyxis: click may come from a locked column strip
 					}
 				}
 			else if (e.getSource() == mTable) {
@@ -341,7 +341,7 @@ public class DETableView extends JScrollPane
 					int theColumn = mTable.convertTotalColumnIndexFromView(mTable.columnAtPoint(e.getPoint()));
 					JPopupMenu popup = mDetailPopupProvider.createPopupMenu(mTableModel.getRecord(theRow), this, theColumn, e.isControlDown());
 					if (popup != null)
-						popup.show(mTable, e.getX(), e.getY());
+						popup.show(mTable, e.getX() + com.actelion.research.datawarrior.pyxis.LockedColumns.popupShift(e), e.getY());	// Pyxis: see LockedColumns
 					}
 				}
 			return true;

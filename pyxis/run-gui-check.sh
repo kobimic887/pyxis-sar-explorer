@@ -44,3 +44,8 @@ javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/SwapSummaryGui
 java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/swap-prefs" \
   --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
   -classpath "datawarrior_all.jar:$OUT" SwapSummaryGuiCheck "$OUT/grid.dwam"
+
+javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/LockedColumnsGuiCheck.java
+java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/lock-prefs" \
+  --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+  -classpath "datawarrior_all.jar:$OUT" LockedColumnsGuiCheck "$OUT/grid.dwam" "${2%.png}-locked-columns.png"

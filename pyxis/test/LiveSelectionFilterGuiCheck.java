@@ -82,6 +82,27 @@ public class LiveSelectionFilterGuiCheck {
 		settle();
 		expect("selection of four rows", shown(sFiltered), 4);
 
+		// A selection made by pressing the mouse inside the filtered view is not followed...
+		onEDT(() -> {
+			sFiltered.dispatchEvent(new java.awt.event.MouseEvent(sFiltered, java.awt.event.MouseEvent.MOUSE_PRESSED,
+					System.currentTimeMillis(), java.awt.event.InputEvent.BUTTON1_DOWN_MASK, 5, 5, 1, false, java.awt.event.MouseEvent.BUTTON1));
+			select(2);
+			});
+		settle();
+		expect("selection made inside the filtered view is not followed", shown(sFiltered), 4);
+		onEDT(() -> sFiltered.dispatchEvent(new java.awt.event.MouseEvent(sFiltered, java.awt.event.MouseEvent.MOUSE_RELEASED,
+				System.currentTimeMillis(), 0, 5, 5, 1, false, java.awt.event.MouseEvent.BUTTON1)));
+		settle();
+		// ...but the next selection made elsewhere is
+		onEDT(() -> select(0, 1, 2, 3));
+		settle();
+		expect("selection made elsewhere after that is followed again", shown(sFiltered), 4);
+		onEDT(() -> select(0, 2, 3));
+		settle();
+		expect("and updates the view", shown(sFiltered), 3);
+		onEDT(() -> select(0, 1, 2, 3));
+		settle();
+
 		final File picture = new File(args[1]);
 		onEDT(() -> {
 			try {

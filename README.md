@@ -66,6 +66,12 @@ The same tasks are also in the **Chemistry** menu and can be recorded in macros.
   stays restricted to the saved list but no longer follows the selection until the option
   is switched on again. The option is not macro recorded.
 
+* **Lock Columns Up To '...'** (popup menu of a table column header) keeps that column and
+  all columns left of it in view while the table is scrolled to the right; **Unlock
+  Columns** ends it. Sorting, selecting rows, resizing and the popup menus work on the
+  locked columns as usual. The lock is not saved with the project and is not macro
+  recorded. Editing a cell of a locked column scrolls the table back to it first.
+
 * **Create R-Group Table...** (`createRGroupTable`) copies all rows with one chosen
   decomposed scaffold into a new document: Scaffold, numbered R-group columns, molecule,
   chosen ID (or source row number), and selected value columns. Run Decompose R-Groups
