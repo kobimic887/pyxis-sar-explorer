@@ -36,9 +36,13 @@ public class RGroupGridDialog extends JDialog {
         table.getTableHeader().setDefaultRenderer((t,v,s,f,r,c)->c==0?new JLabel(rowName+" / "+columnName):structure(grid.columns.get(c-1)));
         table.setDefaultRenderer(Object.class,(t,v,s,f,r,c)-> {
             if(c==0) return structure(grid.rows.get(r));
-            var cell=grid.cell(r,c-1); JLabel label=new JLabel(cell==null?"Empty":(Double.isFinite(cell.value())?String.format(java.util.Locale.ROOT,"%.5g",cell.value()):"No finite values")+"  (n="+cell.count()+")",SwingConstants.CENTER);
+            var cell=grid.cell(r,c-1); JLabel label=new JLabel(cell==null?"Empty":(Double.isFinite(cell.value())?ScaffoldTreeDialog.shortNumber(cell.value()):"No finite values")+"  (n="+cell.count()+")",SwingConstants.CENTER);
             label.setOpaque(true); label.setForeground(Color.BLACK);
-            double fraction=cell==null||!Double.isFinite(cell.value())?Double.NaN: high==low?0.5:(cell.value()-low)/(high-low);
+            // Values that are all positive and span more than a factor of 100, as potencies do, are
+            // coloured on a logarithmic scale; otherwise one large value would leave all others pale.
+            boolean logarithmic=low>0 && high/low>100;
+            double fraction=cell==null||!Double.isFinite(cell.value())?Double.NaN: high==low?0.5
+                : logarithmic?(Math.log(cell.value())-Math.log(low))/(Math.log(high)-Math.log(low)):(cell.value()-low)/(high-low);
             label.setBackground(Double.isNaN(fraction)?new Color(235,235,235):new Color((int)(230-80*fraction),(int)(240-150*fraction),(int)(255-130*fraction)));
             label.setBorder(BorderFactory.createLineBorder(s?Color.BLACK:Color.WHITE,s?3:1)); return label;
         });

@@ -32,14 +32,24 @@ public class DETaskCreateRGroupGrid extends ConfigurableTask {
     public void setDialogConfiguration(Properties p) { setDialogConfigurationToDefault(); for(String k:controls.keySet()) if(p.containsKey(k)) controls.get(k).setSelectedItem(p.getProperty(k)); }
     public boolean isConfigurationValid(Properties p,boolean live) {
         try { RGroupGrid.Aggregate.valueOf(p.getProperty("aggregate","mean")); }catch(Exception e){showErrorMessage("Unknown aggregation.");return false;}
-        if(!List.of("frequency","mean").contains(p.getProperty("order","frequency")) || p.getProperty("scaffold","").isEmpty()) {showErrorMessage("Choose a scaffold and a valid ordering.");return false;}
+        if(!List.of("frequency","mean").contains(p.getProperty("order","frequency"))) {showErrorMessage("Unknown ordering of the grid axes.");return false;}
         if(p.getProperty("rowColumn","").equals(p.getProperty("columnColumn",""))) {showErrorMessage("Choose two different R-group positions.");return false;}
         if(live) for(String k:List.of("scaffoldColumn","rowColumn","columnColumn","valueColumn")) { int c=model.findColumn(p.getProperty(k,"")); if(c<0 || (k.equals("valueColumn")?!model.isColumnTypeDouble(c):!model.isColumnTypeStructure(c)) || ((k.equals("rowColumn")||k.equals("columnColumn"))&&!model.getColumnTitleNoAlias(c).matches("R[0-9]+"))) {showErrorMessage("Invalid column: "+k);return false;} }
         return true;
     }
     public void runTask(Properties p) {
         int scaffold=model.findColumn(p.getProperty("scaffoldColumn")), row=model.findColumn(p.getProperty("rowColumn")),column=model.findColumn(p.getProperty("columnColumn")),value=model.findColumn(p.getProperty("valueColumn"));
-        List<RGroupGrid.Input> input=new ArrayList<>();for(int r=0;r<model.getTotalRowCount();r++)if(p.getProperty("scaffold").equals(model.getTotalValueAt(r,scaffold))) input.add(new RGroupGrid.Input(model.getTotalValueAt(r,row),model.getTotalValueAt(r,column),model.getTotalOriginalDoubleAt(r,value),r));
+        // Without a chosen scaffold (macros, first use) the most frequent one is taken;
+        // ties are broken by the scaffold key so that the choice is repeatable.
+        String chosen=p.getProperty("scaffold","");
+        if(chosen.isEmpty()) {
+            Map<String,Integer> counts=new TreeMap<>();
+            for(int r=0;r<model.getTotalRowCount();r++){String s=model.getTotalValueAt(r,scaffold);if(!s.isEmpty())counts.merge(s,1,Integer::sum);}
+            int best=0;
+            for(Map.Entry<String,Integer> e:counts.entrySet()) if(e.getValue()>best){best=e.getValue();chosen=e.getKey();}
+        }
+        final String scaffoldKey=chosen;
+        List<RGroupGrid.Input> input=new ArrayList<>();for(int r=0;r<model.getTotalRowCount();r++)if(scaffoldKey.equals(model.getTotalValueAt(r,scaffold))) input.add(new RGroupGrid.Input(model.getTotalValueAt(r,row),model.getTotalValueAt(r,column),model.getTotalOriginalDoubleAt(r,value),r));
         try { if(input.isEmpty())throw new IllegalArgumentException("No molecules have the chosen scaffold."); RGroupGrid grid=new RGroupGrid(input,RGroupGrid.Aggregate.valueOf(p.getProperty("aggregate","mean")),"mean".equals(p.getProperty("order"))); SwingUtilities.invokeLater(()->new RGroupGridDialog((DEFrame)getParentFrame(),grid,p.getProperty("rowColumn"),p.getProperty("columnColumn"),p.getProperty("aggregate","mean")+" "+p.getProperty("valueColumn")).setVisible(true)); } catch(IllegalArgumentException e) {showErrorMessage(e.getMessage());}
     }
 }

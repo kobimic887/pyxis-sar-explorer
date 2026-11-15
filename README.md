@@ -107,6 +107,11 @@ remains unimplemented: a shared-model split-table probe exposed a visibility-boo
 exception, and the existing table/view event routing still needs adaptation. The new
 R-group combination grid and one-step cross-view filter are also still outstanding.
 
+### Pictures for a presentation
+`pyxis/demo/make-gallery.sh project.dwar output-directory value-column` runs the workflow
+on one project in the real application and saves pictures of the scaffold tree, R-group
+grid, swap summary, pair table and a table with locked columns. It checks nothing.
+
 ### What Pyxis changed
 * Window titles and the About text name the program Pyxis SAR Explorer.
 * The program does not contact the DataWarrior update server and does not update itself
