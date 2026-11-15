@@ -30,6 +30,8 @@ they were not all manually retested in this change.
 
 ## Verification added
 
+- `SAROverviewGuiCheck`: built application; one overview run creates Scaffold/R columns, opens the tree with the chosen value selected for statistics and a swap summary document; the tree's Word report has one table row and one readable PNG per scaffold; a second run adds no columns.
+
 - `LockedColumnsGuiCheck`: built application, 256-row project; two columns locked and the table scrolled right: the strip at the left edge is pixel-identical to the real first two columns, a click on it selects that row in the first column, a click on its header sorts, a column resize resizes it, it disappears at the left end and after unlocking. Popup placement is checked only through the offset handed to the table, not by opening a popup.
 
 - `LiveSelectionFilterGuiCheck`: built application, two 2D views; the restricted view shows 3, 2, 0 and 4 rows as the selection changes while the other keeps every row; the view's own marker bookkeeping agrees; switching off restores all rows and removes the helper list.

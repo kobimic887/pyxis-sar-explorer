@@ -1201,6 +1201,8 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		JMenu menu = new JMenu("SAR");
 		menu.setMnemonic(KeyEvent.VK_S);
 
+		addPyxisItem(menu, "SAR Overview...", () -> new com.actelion.research.datawarrior.pyxis.DETaskSAROverview(mParentFrame).defineAndRun());
+		menu.addSeparator();
 		addPyxisItem(menu, "Build Scaffold Tree...", () -> new com.actelion.research.datawarrior.pyxis.DETaskBuildScaffoldTree(mParentFrame).defineAndRun());
 		menu.addSeparator();
 		addPyxisItem(menu, "Decompose R-Groups...", () -> jMenuChemDecomposeRGroups.doClick());

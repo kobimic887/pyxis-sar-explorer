@@ -9,6 +9,13 @@ reproduce the results of any other SAR software.
 The whole workflow is in the top-level **SAR** menu, in the order it is usually done.
 The same tasks are also in the **Chemistry** menu and can be recorded in macros.
 
+* **SAR Overview...** (`sAROverview`) runs the usual first steps in one go on the open
+  table: R-group decomposition on the Murcko scaffold of every molecule (skipped when
+  Scaffold and R-group columns already exist), the scaffold tree with statistics of the
+  chosen value, and the substituent swap summary. Each step is the ordinary task with the
+  settings one would choose first; the swap summary is left out when no two molecules
+  differ at exactly one R-group or no value is chosen. An existing saved tree
+  configuration is kept as it is.
 * **Build Scaffold Tree...** (`buildScaffoldTree`) opens a window with a hierarchical tree of
   the scaffolds of all molecules. Small scaffolds shared by many molecules are at the top,
   larger and rarer ones below them, each with its molecule count. Double click a scaffold
@@ -65,6 +72,11 @@ The same tasks are also in the **Chemistry** menu and can be recorded in macros.
   structure views cannot be restricted this way. After saving and reopening, the view
   stays restricted to the saved list but no longer follows the selection until the option
   is switched on again. The option is not macro recorded.
+
+* **Report To MS Word** (button in the scaffold tree window) writes the tree as a Word
+  table: one row per scaffold in display order with its picture, hierarchy level, rings,
+  molecule counts, the current statistics snapshot and whether the scaffold came from
+  ring removal or was defined by the user. At most 1,000 scaffolds, most populous first.
 
 * **Lock Columns Up To '...'** (popup menu of a table column header) keeps that column and
   all columns left of it in view while the table is scrolled to the right; **Unlock

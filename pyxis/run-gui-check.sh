@@ -49,3 +49,8 @@ javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/LockedColumnsG
 java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/lock-prefs" \
   --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
   -classpath "datawarrior_all.jar:$OUT" LockedColumnsGuiCheck "$OUT/grid.dwam" "${2%.png}-locked-columns.png"
+
+javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/SAROverviewGuiCheck.java
+java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/overview-prefs" \
+  --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+  -classpath "datawarrior_all.jar:$OUT" SAROverviewGuiCheck "$OUT/grid.dwam"

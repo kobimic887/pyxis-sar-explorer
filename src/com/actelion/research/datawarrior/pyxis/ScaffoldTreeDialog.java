@@ -143,6 +143,29 @@ public class ScaffoldTreeDialog extends JDialog {
 		buttons.add(buttonNoScaffold);
 		buttons.add(buttonExpand);
 		buttons.add(buttonTable);
+		JButton buttonReport = new JButton("Report To MS Word");
+		buttonReport.addActionListener(e -> {
+			javax.swing.JFileChooser chooser = new javax.swing.JFileChooser();
+			chooser.setSelectedFile(new java.io.File("Scaffold report.docx"));
+			if (chooser.showSaveDialog(this) != javax.swing.JFileChooser.APPROVE_OPTION)
+				return;
+			java.io.File file = chooser.getSelectedFile();
+			if (!file.getName().toLowerCase().endsWith(".docx"))
+				file = new java.io.File(file.getPath()+".docx");
+			if (file.exists() && JOptionPane.showConfirmDialog(this, "Replace the existing file '"+file.getName()+"'?", "Report To MS Word",
+					JOptionPane.OK_CANCEL_OPTION) != JOptionPane.OK_OPTION)
+				return;
+			try {
+				if (file.exists() && !file.delete())
+					throw new java.io.IOException("The existing file could not be replaced.");
+				int rows = writeReport(file);
+				mLabelStatus.setText("Report with "+rows+" scaffolds written to "+file.getName()+".");
+				}
+			catch (Exception ex) {
+				JOptionPane.showMessageDialog(this, "The report could not be written: "+ex.getMessage());
+				}
+			});
+		buttons.add(buttonReport);
 
 		JPanel south = new JPanel();
 		south.setLayout(new BoxLayout(south, BoxLayout.Y_AXIS));
@@ -362,6 +385,61 @@ public class ScaffoldTreeDialog extends JDialog {
 		}
 
 	/** Draws the scaffold structure with its molecule counts below. */
+	/**
+	 * Writes the tree as a Word table: one row per scaffold in display order with its
+	 * picture, its place in the hierarchy, molecule counts and the current statistics.
+	 * The statistics are the snapshot shown in the tree, see the Refresh button.
+	 * @return number of scaffolds written; the Word writer's row limit applies
+	 */
+	public int writeReport(java.io.File file) throws java.io.IOException {
+		List<Node> nodes = mHierarchy.getNodesInDisplayOrder();
+		if (nodes.size() > DocxTableWriter.MAX_ROWS)
+			nodes = nodes.subList(0, DocxTableWriter.MAX_ROWS);	// most populous first, so the tail is the least informative part
+
+		String value = (mValue.getSelectedIndex() <= 0) ? null : (String)mValue.getSelectedItem();
+		List<String> headers = new java.util.ArrayList<>(java.util.Arrays.asList("Scaffold", "Level", "Rings", "Molecules", "Exactly This Scaffold"));
+		if (value != null)
+			headers.addAll(java.util.Arrays.asList("In Subset ("+mSubset.getSelectedItem()+")", "With "+value, "Mean "+value, "Median "+value));
+		headers.add("Defined By");
+
+		List<List<DocxTableWriter.Cell>> rows = new java.util.ArrayList<>();
+		for (Node node:nodes) {
+			List<DocxTableWriter.Cell> row = new java.util.ArrayList<>();
+			JStructureView view = new JStructureView();
+			view.setIDCode(node.getIDCode());
+			view.setSize(400, 200);
+			view.setBackground(Color.WHITE);
+			view.setForeground(Color.BLACK);
+			view.setOpaque(true);
+			view.setDisableBorder(true);
+			java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(400, 200, java.awt.image.BufferedImage.TYPE_INT_RGB);
+			Graphics2D g = image.createGraphics();
+			g.setColor(Color.WHITE);
+			g.fillRect(0, 0, 400, 200);
+			view.paint(g);
+			g.dispose();
+			java.io.ByteArrayOutputStream png = new java.io.ByteArrayOutputStream();
+			javax.imageio.ImageIO.write(image, "png", png);
+			row.add(new DocxTableWriter.Cell("", png.toByteArray()));
+
+			row.add(new DocxTableWriter.Cell(Integer.toString(node.getLevel()+1)));
+			row.add(new DocxTableWriter.Cell(Integer.toString(node.getRingCount())));
+			row.add(new DocxTableWriter.Cell(Integer.toString(node.getMemberCount())));
+			row.add(new DocxTableWriter.Cell(Integer.toString(node.getExactMemberCount())));
+			if (value != null) {
+				double[] stats = mStatistics.get(node);
+				row.add(new DocxTableWriter.Cell(stats == null ? "" : Integer.toString((int)stats[0])));
+				row.add(new DocxTableWriter.Cell(stats == null ? "" : Integer.toString((int)stats[1])));
+				row.add(new DocxTableWriter.Cell(stats == null || stats[1] == 0 ? "" : shortNumber(stats[2])));
+				row.add(new DocxTableWriter.Cell(stats == null || stats[1] == 0 ? "" : shortNumber(stats[3])));
+				}
+			row.add(new DocxTableWriter.Cell(node.isUserDefined() ? "user" : "ring removal"));
+			rows.add(row);
+			}
+		DocxTableWriter.write(file.toPath(), headers, rows);
+		return rows.size();
+		}
+
 	private double mScaleMin = Double.NaN, mScaleMax = Double.NaN;
 	private boolean mScaleIsLogarithmic;
 
