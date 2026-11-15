@@ -20,7 +20,12 @@ Both are in the **Chemistry** menu and can be recorded in macros.
   Choose a numerical column and all rows, visible rows or a row list, then press Refresh
   for a subset snapshot: family count, finite value count, mean and median. Missing and
   infinite values do not enter mean/median. Tree As New Table includes the snapshot;
-  refresh again after filters/data change. These window controls are not macro recorded.
+  refresh again after filters/data change. Right-click a scaffold to edit a copy in the
+  structure editor; the added user-defined root matches full molecules by substructure
+  (not Murcko ancestry) and is marked in the tree/export. These nodes live in this window.
+  Re-orient Family uses DataWarrior's Generate 2D-Atom-Coordinates template mechanism,
+  limited to the family molecule keys; it changes coordinates, not chemistry. This action
+  is macro-recordable, including the scaffold coordinates and family keys. These window controls are not macro recorded.
 * **Analyse Substituent Pairs...** (`analyseSubstituentPairs`) lists all pairs of molecules
   that share a scaffold and differ at exactly one R-group position, with both values of a
   chosen numerical column, their difference and their ratio. Run *Decompose R-Groups...*

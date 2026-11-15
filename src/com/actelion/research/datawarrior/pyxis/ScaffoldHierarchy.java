@@ -53,6 +53,8 @@ public class ScaffoldHierarchy {
 		private final BitSet exactMembers = new BitSet();	// rows whose own scaffold this is
 		private final List<Node> children = new ArrayList<>();
 		private Node parent;
+		private boolean userDefined;
+		public boolean isUserDefined() { return userDefined; }
 
 		private Node(String idcode, int ringCount, int atomCount) {
 			this.idcode = idcode;
@@ -110,6 +112,25 @@ public class ScaffoldHierarchy {
 	private final List<Node> mRoots = new ArrayList<>();
 	private final BitSet mNoScaffoldRows = new BitSet();
 	private int mRowCount;
+
+	/** User nodes are independent roots: membership means a full-molecule substructure match. */
+	public Node addUserScaffold(StereoMolecule fragment, StereoMolecule[] molecules) {
+		fragment = fragment.getCompactCopy();
+		fragment.setFragment(true);
+		String code = new Canonizer(fragment).getIDCode();
+		fragment.ensureHelperArrays(Molecule.cHelperRings);
+		Node node = new Node(code, fragment.getRingSet().getSize(), fragment.getAtoms());
+		node.userDefined = true;
+		com.actelion.research.chem.SSSearcher search = new com.actelion.research.chem.SSSearcher();
+		search.setFragment(fragment);
+		for (int r=0; r<molecules.length; r++) {
+			if (molecules[r] == null) continue;
+			search.setMolecule(molecules[r]);
+			if (search.isFragmentInMolecule()) node.members.set(r);
+			}
+		mRoots.add(node);
+		return node;
+		}
 
 	/**
 	 * Returns the stereo-free Murcko scaffold of a molecule as a fragment idcode.

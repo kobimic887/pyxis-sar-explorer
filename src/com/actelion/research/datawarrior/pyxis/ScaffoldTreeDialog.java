@@ -37,6 +37,8 @@ import java.util.List;
  */
 public class ScaffoldTreeDialog extends JDialog {
 	private final DEFrame mParentFrame;
+	private final String mStructureColumnName;
+	private final java.util.Map<Node,String> mTemplates = new java.util.IdentityHashMap<>();
 	private final ScaffoldHierarchy mHierarchy;
 	private final CompoundRecord[] mRecord;
 	private final JTree mTree;
@@ -50,6 +52,7 @@ public class ScaffoldTreeDialog extends JDialog {
 							  String structureColumnName, int minMembers, int emptyRows) {
 		super(parent, "Scaffold Tree of '"+structureColumnName+"' - "+parent.getTitle(), false);
 		mParentFrame = parent;
+		mStructureColumnName = structureColumnName;
 		mHierarchy = hierarchy;
 		mRecord = record;
 
@@ -65,6 +68,20 @@ public class ScaffoldTreeDialog extends JDialog {
 		mTree.getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
 		mTree.setToggleClickCount(0);	// double click selects molecules instead of expanding
 		mTree.addMouseListener(new MouseAdapter() {
+			private void popup(MouseEvent e) {
+				if (!e.isPopupTrigger()) return;
+				TreePath path = mTree.getPathForLocation(e.getX(), e.getY());
+				if (path == null) return;
+				mTree.setSelectionPath(path);
+				JPopupMenu menu = new JPopupMenu();
+				JMenuItem edit = new JMenuItem("Edit Scaffold...");
+				edit.addActionListener(a -> editScaffold()); menu.add(edit);
+				JMenuItem orient = new JMenuItem("Re-orient Family");
+				orient.addActionListener(a -> orientScaffold()); menu.add(orient);
+				menu.show(mTree, e.getX(), e.getY());
+				}
+			@Override public void mousePressed(MouseEvent e) { popup(e); }
+			@Override public void mouseReleased(MouseEvent e) { popup(e); }
 			@Override public void mouseClicked(MouseEvent e) {
 				if (e.getClickCount() == 2 && mTree.getPathForLocation(e.getX(), e.getY()) != null)
 					selectMoleculesOfChosenScaffold();
@@ -138,6 +155,59 @@ public class ScaffoldTreeDialog extends JDialog {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setSize(HiDPIHelper.scale(640), HiDPIHelper.scale(720));
 		setLocationRelativeTo(parent);
+		}
+
+	private Node chosenNode() {
+		TreePath path = mTree.getSelectionPath();
+		return path == null ? null : (Node)((DefaultMutableTreeNode)path.getLastPathComponent()).getUserObject();
+		}
+
+	private void editScaffold() {
+		Node node = chosenNode();
+		if (node == null) return;
+		com.actelion.research.chem.StereoMolecule mol = new com.actelion.research.chem.IDCodeParser().getCompactMolecule(mTemplates.getOrDefault(node, node.getIDCode()));
+		com.actelion.research.gui.editor.SwingEditorDialog editor = new com.actelion.research.gui.editor.SwingEditorDialog(mParentFrame, mol);
+		editor.setTitle("Edit Scaffold (adds a user-defined node)");
+		editor.setVisible(true);
+		if (!editor.isCancelled() && editor.getStructure().getAllAtoms() != 0) addEditedScaffold(editor.getStructure());
+		}
+
+	/** Shared by the editor and the built-app check. New rows require rebuilding the tree. */
+	public void addEditedScaffold(com.actelion.research.chem.StereoMolecule fragment) {
+		CompoundTableModel model = mParentFrame.getTableModel();
+		int column = model.findColumn(mStructureColumnName);
+		com.actelion.research.chem.StereoMolecule[] molecules = new com.actelion.research.chem.StereoMolecule[mRecord.length];
+		java.util.Set<CompoundRecord> present = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+		for (int r=0; r<model.getTotalRowCount(); r++) present.add(model.getTotalRecord(r));
+		for (int r=0; r<mRecord.length; r++)
+			if (present.contains(mRecord[r])) molecules[r] = model.getChemicalStructure(mRecord[r], column, 0, null);
+		Node node = mHierarchy.addUserScaffold(fragment, molecules);
+		fragment.setFragment(true);
+		com.actelion.research.chem.Canonizer canon = new com.actelion.research.chem.Canonizer(fragment);
+		mTemplates.put(node, canon.getIDCode()+" "+canon.getEncodedCoordinates());
+		DefaultTreeModel tree = (DefaultTreeModel)mTree.getModel();
+		tree.insertNodeInto(createTreeNode(node), (DefaultMutableTreeNode)tree.getRoot(), ((DefaultMutableTreeNode)tree.getRoot()).getChildCount());
+		refreshStatistics();
+		}
+
+	private void orientScaffold() {
+		Node node = chosenNode();
+		if (node == null) return;
+		CompoundTableModel model = mParentFrame.getTableModel();
+		int column = model.findColumn(mStructureColumnName);
+		StringBuilder members = new StringBuilder();
+		for (int r=node.getMembers().nextSetBit(0); r>=0; r=node.getMembers().nextSetBit(r+1)) {
+			Object code = mRecord[r].getData(column);
+			if (code instanceof byte[]) members.append(new String((byte[])code)).append('\t');
+			}
+		java.util.Properties config = new java.util.Properties();
+		config.setProperty("structureColumn", mStructureColumnName);
+		config.setProperty("scaffolds", mTemplates.getOrDefault(node, node.getIDCode()));
+		config.setProperty("automatic", "false");
+		config.setProperty("members", members.toString());
+		DETaskOrientScaffold task = new DETaskOrientScaffold(mParentFrame);
+		task.setPredefinedConfiguration(config);
+		task.defineAndRun();
 		}
 
 	private void refreshStatistics() {
@@ -214,7 +284,7 @@ public class ScaffoldTreeDialog extends JDialog {
 	/** Writes the displayed tree into a new document, so that it can be saved and exported. */
 	private void createTable() {
 		List<Node> nodes = mHierarchy.getNodesInDisplayOrder();
-		String[] title = { "Scaffold", "Parent Scaffold", "Level", "Rings", "Molecules", "Molecules With Exactly This Scaffold", "Subset Count", "Finite Values", "Mean", "Median" };
+		String[] title = { "Scaffold", "Parent Scaffold", "Level", "Rings", "Molecules", "Molecules With Exactly This Scaffold", "Subset Count", "Finite Values", "Mean", "Median", "User Defined" };
 
 		DEFrame frame = DataWarrior.getApplication().getEmptyFrame("Scaffold Tree of "+mParentFrame.getTitle());
 		CompoundTableModel tableModel = frame.getTableModel();
@@ -232,6 +302,7 @@ public class ScaffoldTreeDialog extends JDialog {
 			tableModel.setTotalValueAt(Integer.toString(node.getRingCount()), row, 3);
 			tableModel.setTotalValueAt(Integer.toString(node.getMemberCount()), row, 4);
 			tableModel.setTotalValueAt(Integer.toString(node.getExactMemberCount()), row, 5);
+			tableModel.setTotalValueAt(node.isUserDefined() ? "yes" : "no", row, 10);
 			double[] stats = mStatistics.get(node);
 			if (stats != null)
 				for (int i=0; i<4; i++) tableModel.setTotalValueAt(Double.isFinite(stats[i]) ? Double.toString(stats[i]) : "", row, 6+i);
@@ -268,7 +339,8 @@ public class ScaffoldTreeDialog extends JDialog {
 				if (node.getExactMemberCount() != node.getMemberCount())
 					text += " ("+node.getExactMemberCount()+" exact)";
 				double[] stats = mStatistics.get(node);
-				if (stats != null) text += " | subset "+(int)stats[0]+"; mean "+stats[2]+"; median "+stats[3];
+				if (stats != null) text += " | subset "+(int)stats[0]+(stats[1] == 0 ? "" : "; mean "+stats[2]+"; median "+stats[3]);
+				if (node.isUserDefined()) text = "User-defined: "+text;
 				mLabel.setText(text);
 				}
 			// The structure view paints its own background, so the chosen scaffold is framed

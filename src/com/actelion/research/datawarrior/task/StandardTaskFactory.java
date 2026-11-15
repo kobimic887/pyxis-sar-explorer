@@ -27,6 +27,7 @@ import com.actelion.research.datawarrior.help.DETaskSetExplanationHTML;
 import com.actelion.research.datawarrior.plugin.PluginTaskDefinition;
 import com.actelion.research.datawarrior.pyxis.DETaskAnalyseSubstituentPairs;
 import com.actelion.research.datawarrior.pyxis.DETaskBuildScaffoldTree;
+import com.actelion.research.datawarrior.pyxis.DETaskOrientScaffold;
 import com.actelion.research.datawarrior.task.chem.*;
 import com.actelion.research.datawarrior.task.chem.clib.DETaskEnumerateCombinatorialLibrary;
 import com.actelion.research.datawarrior.task.chem.dev.*;
@@ -108,6 +109,7 @@ public class StandardTaskFactory {
 			 : codeMatches(taskCode, DETaskAnalyseActivityCliffs.TASK_NAME) ? new DETaskAnalyseActivityCliffs(frame)
 			 : codeMatches(taskCode, DETaskAnalyseScaffolds.TASK_NAME) ? new DETaskAnalyseScaffolds(frame)
 			 : codeMatches(taskCode, DETaskAnalyseSubstituentPairs.TASK_NAME) ? new DETaskAnalyseSubstituentPairs(frame)
+			 : codeMatches(taskCode, DETaskOrientScaffold.TASK_NAME) ? new DETaskOrientScaffold(frame)
 			 : codeMatches(taskCode, DETaskBuildScaffoldTree.TASK_NAME) ? new DETaskBuildScaffoldTree(frame)
 			 : codeMatches(taskCode, DETaskAnalyseSOMFile.TASK_NAME) ? new DETaskAnalyseSOMFile(application)
 			 : codeMatches(taskCode, DETaskApplySOMFile.TASK_NAME) ? new DETaskApplySOMFile(application)
@@ -364,6 +366,7 @@ public class StandardTaskFactory {
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskAnalyseScaffolds.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskAnalyseSubstituentPairs.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskBuildScaffoldTree.TASK_NAME));
+			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskOrientScaffold.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_DATA, DETaskAnalyseSOMFile.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_DATA, DETaskApplySOMFile.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_FILE, DETaskApplyTemplateFromFile.TASK_NAME));

@@ -86,6 +86,12 @@ public class ScaffoldTreeGuiCheck {
 				else if (family == 0 || family > tableModel.getTotalRowCount())
 					result[0] = "implausible family size "+family;
 
+				// Exercise the editor's accepted-structure path in the real window.
+				d.addEditedScaffold(new com.actelion.research.chem.IDCodeParser().getCompactMolecule(node.getIDCode()));
+				DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
+				ScaffoldHierarchy.Node custom = (ScaffoldHierarchy.Node)((DefaultMutableTreeNode)root.getLastChild()).getUserObject();
+				if (!custom.isUserDefined() || custom.getMemberCount() < family) throw new AssertionError("user scaffold membership");
+
 				// 'Tree As New Table' must open a document with one row per scaffold of the tree
 				int scaffolds = countNodes((DefaultMutableTreeNode)tree.getModel().getRoot()) - 1;
 				asTable.doClick();
@@ -121,6 +127,22 @@ public class ScaffoldTreeGuiCheck {
 
 		if (result[0] != null)
 			fail(result[0]);
+		CompoundTableModel model = ((DEFrame)d.getOwner()).getTableModel();
+		int structure = model.findColumn("Structure");
+		String[] original = new String[model.getTotalRowCount()];
+		for (int r=0; r<original.length; r++) original[r] = model.getTotalValueAt(r, structure);
+		java.util.Properties config = new java.util.Properties();
+		config.setProperty("structureColumn", "Structure");
+		config.setProperty("members", original[0]);
+		String scaffold = ScaffoldHierarchy.murckoScaffoldIDCode(model.getChemicalStructure(model.getTotalRecord(0), structure, 0, null));
+		config.setProperty("scaffolds", scaffold);
+		config.setProperty("automatic", "false");
+		new com.actelion.research.datawarrior.pyxis.DETaskOrientScaffold((DEFrame)d.getOwner()).executeAsSubtask(config, null);
+		for (int r=0; r<original.length; r++)
+			if (!original[r].equals(model.getTotalValueAt(r, structure))) fail("orientation changed chemical identity");
+		int coordinates = model.getChildColumn(structure, CompoundTableModel.cColumnType2DCoordinates);
+		if (coordinates < 0 || model.getTotalValueAt(0, coordinates).isEmpty()) fail("orientation did not write coordinates");
+		System.out.println("User scaffold added/exported; template orientation preserved all "+original.length+" molecule identities");
 		System.out.println("ScaffoldTreeGuiCheck passed");
 		System.exit(0);
 		}

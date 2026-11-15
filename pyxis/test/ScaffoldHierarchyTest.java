@@ -22,6 +22,11 @@ public class ScaffoldHierarchyTest {
 		if (!java.util.Arrays.equals(stats, new double[] {4, 2, 3, 3})) throw new AssertionError("subset statistics");
 		if (!Double.isNaN(ScaffoldHierarchy.statistics(family, new java.util.BitSet(), new double[5])[2])) throw new AssertionError("empty subset");
 
+		StereoMolecule ring = new StereoMolecule(); new SmilesParser().parse(ring, "c1ccccc1");
+		StereoMolecule chain = new StereoMolecule(); new SmilesParser().parse(chain, "CCC");
+		ScaffoldHierarchy edited = new ScaffoldHierarchy();
+		Node custom = edited.addUserScaffold(ring, new StereoMolecule[] {ring, chain, null});
+		check(custom.isUserDefined() && custom.getMemberCount() == 1 && custom.getMembers().get(0), "edited scaffold substructure membership");
 		testScaffoldIdentity();
 		testKnownTree();
 		testCentralRingIsNotRemoved();
