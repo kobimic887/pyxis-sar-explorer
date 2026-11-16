@@ -10,7 +10,7 @@ for confirmation on the first start (see *Installers* in the README).
 
 ## 1. Open the potency data (30 s)
 
-**File → Open**, choose `Chembl_612285and6.sdf`. The program asks once whether molecules
+**File → Open**, choose `Chembl_612285and6.sdf`. The program asks once ("Do you want the program to interpret those molecules to be racemic?") whether molecules
 with a single stereo centre and no stereo information should be read as racemic; answer
 **No** to keep the file as it is. You get 259 rows, three of them without a structure.
 

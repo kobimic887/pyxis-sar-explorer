@@ -1161,7 +1161,7 @@ public class CompoundTableLoader implements CompoundTableConstants,Runnable {
 
 			if (rxnCount != 0 && unmapped != 0 && (mAddAtomMapping || askOnEDT((rxnCount == unmapped ? "Y" : "Some of y")
 							+ "our reactions don't contain atom mapping information.\n"
-							+ "Do you want DataWarrior to create plausible atom mapping?", "Warning",
+							+ "Do you want the program to create plausible atom mapping?", "Warning",
 					JOptionPane.WARNING_MESSAGE))) {
 				mAddAtomMapping = true;
 				insertReactionMappingSMP(smilesColumn, smilesColumn+2, smilesColumn+1, unmapped);
@@ -1964,7 +1964,7 @@ try {
 				&& askOnEDT("When writing an SD-file, many programs export racemic compounds without any stereo\n"
 						+ "information for compounds that contain just one stereo center.\n"
 						+ "All molecules of this SD-file, which contain just one stereo center, miss stereo information.\n"
-						+ "Do you want DataWarrior to interpret those molecules to be racemic?", "Warning",
+						+ "Do you want the program to interpret those molecules to be racemic?", "Warning",
 				JOptionPane.WARNING_MESSAGE)) {
 			mMakeUnknownSingleStereoCentersRacemic = true;
 			processAgain = true;
@@ -1976,7 +1976,7 @@ try {
 		if (!mAssumeChiralFlag && analysis.v2000Found && !analysis.chiralFlagFound && analysis.definedStereoCentersFound
 		 && askOnEDT("Erroneously, some programs store pure enantiomers as racemates when exporting to an SD-file.\n"
 						+ "All molecules in this SD-file are marked as racemate and some molecules contain stereo centers.\n"
-						+ "Do you want DataWarrior to interpret those stereo centers as absolute? If you answer YES, then\n"
+						+ "Do you want the program to interpret those stereo centers as absolute? If you answer YES, then\n"
 						+ "molecules with defined stereo conters will be assumed to be pure enantiomers rather then racemates.", "Warning",
 				JOptionPane.WARNING_MESSAGE)) {
 			mAssumeChiralFlag = true;
@@ -2314,7 +2314,7 @@ try {
 
 		if (rxnCount != 0 && unmapped != 0 && (mAddAtomMapping || askOnEDT((rxnCount == unmapped ? "Some" : "All")
 						+ " of your reactions miss atom mapping information.\n"
-						+ "Do you want DataWarrior to create plausible atom mapping?", "Warning",
+						+ "Do you want the program to create plausible atom mapping?", "Warning",
 				JOptionPane.WARNING_MESSAGE))) {
 			mAddAtomMapping = true;
 			insertReactionMappingSMP(1, 2, 3, unmapped);
@@ -2335,7 +2335,7 @@ try {
 /*	private void handleMissingChiralFlag() {
 		if (!askOnEDT("Erroneously, some programs store pure enantiomers as racemates when exporting to an SD-file.\n"
 			+ "All molecules in this SD-file are marked as racemate and some molecules contain stereo centers.\n"
-			+ "Do you want DataWarrior to interpret those stereo centers as absolute?", "Warning",
+			+ "Do you want the program to interpret those stereo centers as absolute?", "Warning",
 			JOptionPane.WARNING_MESSAGE))
 			return;
 
