@@ -39,18 +39,19 @@ public class LockedColumnsGuiCheck {
 
 	public static void main(String[] args) throws Exception {
 		Thread.setDefaultUncaughtExceptionHandler((t, e) -> { e.printStackTrace(); System.exit(1); });
-		DataWarriorLinux.main(new String[] { args[0] });
-		for (int i=0; i<120 && sFrame == null; i++) {
+		// -DpyxisNativeMain=true starts the program the way the packaged application does
+		// (on a Mac that is a different entry point and look); the table is built below anyway.
+		if (Boolean.getBoolean("pyxisNativeMain"))
+			DataWarrior.main(new String[0]);
+		else
+			DataWarriorLinux.main(new String[] { args[0] });
+		for (int i=0; i<120 && (DataWarrior.getApplication() == null || DataWarrior.getApplication().getFrameList().isEmpty()); i++)
 			Thread.sleep(500);
-			DataWarrior application = DataWarrior.getApplication();
-			if (application != null)
-				for (DEFrame frame:application.getFrameList())
-					if (frame.getTableModel().getTotalRowCount() != 0)
-						sFrame = frame;
-			}
-		if (sFrame == null)
-			fail("the project did not open within 60 seconds");
+		if (DataWarrior.getApplication() == null || DataWarrior.getApplication().getFrameList().isEmpty())
+			fail("the application did not start within 60 seconds");
 		Thread.sleep(1500);
+		System.out.println("Application class: "+DataWarrior.getApplication().getClass().getSimpleName()
+				+", look and feel: "+javax.swing.UIManager.getLookAndFeel().getName());
 
 		// Projects differ in their number of columns; the check brings its own table so that
 		// it behaves the same on every input: 16 columns, 20 rows, a distinct value per cell.

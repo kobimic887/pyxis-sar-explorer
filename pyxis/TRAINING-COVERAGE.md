@@ -30,6 +30,9 @@ they were not all manually retested in this change.
 
 ## Verification added
 
+- `DialogsGuiCheck`: builds the SAR Overview, Summarise Substituent Swaps and Create R-Group Grid dialog panels in the built application as a user gets them, checks their default settings, applies settings back (SAR Overview with a value and a drawn core), and runs each task with exactly what its dialog returned. The panels were viewed as pictures.
+- Mac entry point: `DialogsGuiCheck`, `LockedColumnsGuiCheck` and the picture tool were run once with `-DpyxisNativeMain=true` on macOS, which starts `DataWarriorOSX` in its Night Shade look, and passed; CI runs the Linux/Windows entry point only.
+
 - Scale: the scaffold tree logic took 3.9 s for 22,348 rows headless (the two supplied collections repeated 37 times, so only 377 distinct scaffolds; a real collection of that size has more and will be slower). The application's windows were not tested at that size.
 - Light look and feel: tree, grid and tables were rendered once in the Nebula look and viewed. Known difference: the locked-column strip does not draw the alternating row background that light looks add.
 

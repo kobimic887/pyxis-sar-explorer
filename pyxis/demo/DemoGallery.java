@@ -44,7 +44,19 @@ public class DemoGallery {
 		sDirectory.mkdirs();
 		final String valueColumn = args[2];
 
-		DataWarriorLinux.main(new String[] { args[0] });
+		// -DpyxisNativeMain=true starts the program the way the packaged application does; that
+		// entry point takes no file argument on a Mac, so the project is opened through the task.
+		if (Boolean.getBoolean("pyxisNativeMain")) {
+			DataWarrior.main(new String[0]);
+			for (int i=0; i<120 && (DataWarrior.getApplication() == null || DataWarrior.getApplication().getFrameList().isEmpty()); i++)
+				Thread.sleep(500);
+			Thread.sleep(1500);
+			String macro = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get(args[0])));
+			String project = macro.substring(macro.indexOf("fileName=")+9, macro.indexOf('\n', macro.indexOf("fileName=")));
+			new com.actelion.research.datawarrior.task.file.DETaskOpenFile(DataWarrior.getApplication(), project).defineAndRun();
+			}
+		else
+			DataWarriorLinux.main(new String[] { args[0] });
 		DEFrame source = null;
 		for (int i=0; i<120 && source == null; i++) {
 			Thread.sleep(500);

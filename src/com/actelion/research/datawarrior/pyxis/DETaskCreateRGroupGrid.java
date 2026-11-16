@@ -16,14 +16,20 @@ public class DETaskCreateRGroupGrid extends ConfigurableTask {
     public String getTaskName() { return TASK_NAME; }
     public boolean isConfigurable() { if(model.findColumn("R1")<0||model.findColumn("R2")<0) { showErrorMessage("Run Decompose R-Groups first; two R-group positions are required."); return false; } return true; }
     public JComponent createDialogContent() {
-        JPanel panel=new JPanel(new GridLayout(0,2,8,8));
+        // One row per setting at its natural height. A plain grid would make every row as
+        // tall as the scaffold picture, which is the only tall control here.
+        JPanel panel=new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
         String[] keys={"scaffoldColumn","scaffold","rowColumn","columnColumn","valueColumn","aggregate","order"};
-        String[] labels={"Scaffold column","Scaffold value","Row R-group","Column R-group","Numerical value","Combine molecules","Order axes"};
-        for(int i=0;i<keys.length;i++) { JComboBox<String> box=new JComboBox<>(); controls.put(keys[i],box); panel.add(new JLabel(labels[i]));panel.add(box); box.setEditable(!isInteractive()); }
+        String[] labels={"Scaffold column","Scaffold","R-group for rows","R-group for columns","Value shown in the cells","Combine several molecules by","Order rows and columns by"};
+        for(int i=0;i<keys.length;i++) { JComboBox<String> box=new JComboBox<>(); controls.put(keys[i],box);
+            GridBagConstraints left=new GridBagConstraints(); left.gridx=0; left.gridy=i; left.anchor=GridBagConstraints.WEST; left.insets=new Insets(4,0,4,12);
+            GridBagConstraints right=new GridBagConstraints(); right.gridx=1; right.gridy=i; right.fill=GridBagConstraints.HORIZONTAL; right.weightx=1; right.insets=new Insets(4,0,4,0);
+            panel.add(new JLabel(labels[i]+":"),left);panel.add(box,right); box.setEditable(!isInteractive()); }
         for(int c=0;c<model.getTotalColumnCount();c++) { String name=model.getColumnTitleNoAlias(c); if(model.isColumnTypeStructure(c)) { controls.get("scaffoldColumn").addItem(name); if(name.matches("R[0-9]+")) { controls.get("rowColumn").addItem(name);controls.get("columnColumn").addItem(name); } } else if(model.isColumnTypeDouble(c)) controls.get("valueColumn").addItem(name); }
         for(var a:RGroupGrid.Aggregate.values()) controls.get("aggregate").addItem(a.name()); controls.get("order").addItem("frequency");controls.get("order").addItem("mean");
         controls.get("scaffoldColumn").addActionListener(e->fillScaffolds());
-        controls.get("scaffold").setRenderer((list,value,index,selected,focus)->{ JStructureView v=new JStructureView();v.setIDCode(value);v.setPreferredSize(new Dimension(220,80));v.setOpaque(true);v.setBackground(Color.WHITE);return v; });
+        controls.get("scaffold").setRenderer((list,value,index,selected,focus)->{ JStructureView v=new JStructureView();v.setIDCode(value);v.setPreferredSize(new Dimension(220,80));v.setOpaque(true);v.setBackground(Color.WHITE);v.setForeground(Color.BLACK);/* dark looks would draw pale lines on the white field */return v; });
         return panel;
     }
     private void fillScaffolds() { var box=controls.get("scaffold");box.removeAllItems(); int c=model.findColumn((String)controls.get("scaffoldColumn").getSelectedItem()); if(c<0)return; Map<String,Integer> counts=new TreeMap<>();for(int r=0;r<model.getTotalRowCount();r++){String s=model.getTotalValueAt(r,c);if(!s.isEmpty())counts.merge(s,1,Integer::sum);} counts.keySet().stream().sorted(Comparator.<String>comparingInt(counts::get).reversed().thenComparing(Comparator.naturalOrder())).forEach(box::addItem); }
