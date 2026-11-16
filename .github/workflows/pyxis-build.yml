@@ -239,4 +239,4 @@ jobs:
           gh release create "$GITHUB_REF_NAME" stable/* \
             --repo "$GITHUB_REPOSITORY" \
             --title "Pyxis SAR Explorer ${{ needs.build.outputs.version }}" \
-            --notes "Installers for Windows (.msi), macOS (.dmg) and Linux (.deb). Pyxis SAR Explorer is a modified version of DataWarrior, licensed under the GNU GPL v3; the complete source is this repository at this tag. The macOS and Windows installers are not code-signed, so the system asks for confirmation on first start."
+            --notes-file pyxis/RELEASE-NOTES.md
