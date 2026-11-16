@@ -49,6 +49,7 @@ public class DEHelpFrame extends JFrame implements HyperlinkListener {
     private static final long serialVersionUID = 0x20061025;
 
     private static final String[][] CONTENT_PAGES = {
+		    { "SAR Quick Start (Pyxis)", "/html/help/pyxis-sar.html"},
 		    { "General Concepts", "/html/help/basics.html"},
 		    { "Loading Data", "/html/help/import.html"},
 		    { "Main Views", "/html/help/views.html"},

@@ -246,6 +246,8 @@ public class DERuntimeProperties extends RuntimeProperties {
 	private static final String cAffectGlobalExclusion = "affectGlobalExclusion";
 	private static final String cIgnoreGlobalExclusion = "ignoreGlobalExclusion";
 	private static final String cLocalExclusionList = "localExclusionList";
+	private static final String cPyxisLockedColumns = "pyxisLockedColumns";
+	private static final String cPyxisFollowSelection = "pyxisFollowSelection";
 	private static final String cShowNaNValues = "showNaNValues";
 	private static final String cShowLabelBackground = "showLabelBackground";
 	private static final String cRotation = "rotationMatrix";
@@ -682,6 +684,14 @@ public class DERuntimeProperties extends RuntimeProperties {
 				if (value != null)
 					((DETableView)view).setColumnVisibility(column, value.equals("true"));
 				}
+
+			// Pyxis: columns locked at the left edge; files without this entry have none
+			value = getProperty(cPyxisLockedColumns+viewName);
+			int lockedColumns = 0;
+			try { lockedColumns = (value == null) ? 0 : Integer.parseInt(value.trim()); } catch (NumberFormatException nfe) {}
+			if (lockedColumns > 0 || !isNewView)
+				com.actelion.research.datawarrior.pyxis.LockedColumns.setLockedCount((DETableView)view, table,
+						Math.max(0, Math.min(lockedColumns, table.getColumnCount()-1)));
 			}
 		else if (view instanceof VisualizationPanel) {
 			VisualizationPanel vpanel = (VisualizationPanel)view;
@@ -986,6 +996,9 @@ public class DERuntimeProperties extends RuntimeProperties {
 			int exclusionList = mTableModel.getListHandler().getListIndex(getProperty(cLocalExclusionList+viewName));
 			if (exclusionList != -1)
 				visualization.setLocalExclusionList(exclusionList);
+			// Pyxis: a view that followed the selection when the file was saved does so again
+			if (exclusionList != -1 && "true".equals(getProperty(cPyxisFollowSelection+viewName)))
+				com.actelion.research.datawarrior.pyxis.LiveSelectionFilter.resume(visualization, mMainPane.getListSelectionModel());
 
 			int scaleMode = decodeProperty(cSuppressScale+viewName, JVisualization.SCALE_MODE_CODE);
 			if (scaleMode != -1)
@@ -1567,6 +1580,9 @@ public class DERuntimeProperties extends RuntimeProperties {
 					String filter = table.getColumnFilterText();
 					if (filter != null)
 						setProperty(cTableColumnFilter+viewName, filter);
+					int lockedColumns = com.actelion.research.datawarrior.pyxis.LockedColumns.getLockedCount((DETableView)view);
+					if (lockedColumns > 0)
+						setProperty(cPyxisLockedColumns+viewName, Integer.toString(lockedColumns));
 					}
 				if (view instanceof JCardView) {
 					CardsViewConfiguration config = new CardsViewConfiguration(mTableModel);
@@ -1818,6 +1834,8 @@ public class DERuntimeProperties extends RuntimeProperties {
 
 					if (visualization.getLocalExclusionList() != -1)
 						setProperty(cLocalExclusionList+viewName, mTableModel.getListHandler().getListName(visualization.getLocalExclusionList()));
+					if (com.actelion.research.datawarrior.pyxis.LiveSelectionFilter.isActive(visualization))
+						setProperty(cPyxisFollowSelection+viewName, "true");
 
 					if (visualization.getGridMode() != JVisualization.cGridModeShown)
 						setProperty(cSuppressGrid+viewName, JVisualization.GRID_MODE_CODE[visualization.getGridMode()]);

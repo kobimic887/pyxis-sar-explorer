@@ -30,6 +30,7 @@ import com.actelion.research.datawarrior.pyxis.DETaskBuildScaffoldTree;
 import com.actelion.research.datawarrior.pyxis.DETaskOrientScaffold;
 import com.actelion.research.datawarrior.pyxis.DETaskSummariseSubstituentSwaps;
 import com.actelion.research.datawarrior.pyxis.DETaskSAROverview;
+import com.actelion.research.datawarrior.pyxis.DETaskOpenSARExample;
 import com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupTable;
 import com.actelion.research.datawarrior.pyxis.DETaskCreateRGroupGrid;
 import com.actelion.research.datawarrior.pyxis.DETaskExportWord;
@@ -122,6 +123,7 @@ public class StandardTaskFactory {
 			 : codeMatches(taskCode, DETaskOrientScaffold.TASK_NAME) ? new DETaskOrientScaffold(frame)
 			 : codeMatches(taskCode, DETaskSummariseSubstituentSwaps.TASK_NAME) ? new DETaskSummariseSubstituentSwaps(frame)
 			 : codeMatches(taskCode, DETaskSAROverview.TASK_NAME) ? new DETaskSAROverview(frame)
+			 : codeMatches(taskCode, DETaskOpenSARExample.TASK_NAME) ? new DETaskOpenSARExample(frame, application)
 			 : codeMatches(taskCode, DETaskBuildScaffoldTree.TASK_NAME) ? new DETaskBuildScaffoldTree(frame)
 			 : codeMatches(taskCode, DETaskAnalyseSOMFile.TASK_NAME) ? new DETaskAnalyseSOMFile(application)
 			 : codeMatches(taskCode, DETaskApplySOMFile.TASK_NAME) ? new DETaskApplySOMFile(application)
@@ -381,6 +383,7 @@ public class StandardTaskFactory {
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskOrientScaffold.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskSummariseSubstituentSwaps.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskSAROverview.TASK_NAME));
+			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_FILE, DETaskOpenSARExample.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskCreateRGroupTable.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_CHEMISTRY, DETaskCreateRGroupGrid.TASK_NAME));
 			mTaskDictionary.add(new TaskSpecification(TaskSpecification.CATEGORY_FILE, DETaskExportWord.TASK_NAME));

@@ -1,0 +1,115 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<html>
+<head>
+  <title>Pyxis SAR Explorer Quick Start</title>
+  <base href="../">
+  <link type="text/css" href="styles.css" rel="stylesheet">
+</head>
+
+<body>
+<hr align="left" size="2" width="550">
+<h2><a name="PyxisSAR"></a>SAR Quick Start</h2>
+<hr align="left" size="2" width="550">
+
+<p><span class="keyword">Pyxis SAR Explorer</span> is a modified version of
+<span class="keyword">DataWarrior</span>. Everything described in the other chapters of this
+manual works as in DataWarrior. This chapter covers what Pyxis added: the
+<span class="menu">SAR</span> menu and two additions to tables and views.</p>
+
+<p>You need a table with a chemical structure column and, for most steps, one column of
+measured numbers such as an IC50. No file at hand? Choose
+<span class="menu">SAR -> Open Example Project</span>. It opens 288 COX-2 inhibitors with
+published IC50 values from ChEMBL; the example names its source in its
+<span class="keyword">Explanation</span> view.</p>
+
+<br>
+<h3><a name="Overview"></a>1. One step to an overview</h3>
+<p>Choose <span class="menu">SAR -> SAR Overview...</span>, select the structure column and the
+value column (<i>COX-2 IC50 (nM)</i> in the example) and press <span class="menu">OK</span>.
+The program then</p>
+<ul>
+<li>adds a <span class="keyword">Scaffold</span> column and the substituent columns
+<span class="keyword">R1</span>, <span class="keyword">R2</span>, ... to the table,</li>
+<li>opens the <span class="keyword">scaffold tree</span>, and</li>
+<li>opens a second document, <span class="keyword">Substituent Swaps</span>, if at least one
+pair of molecules differs in exactly one substituent.</li>
+</ul>
+<p>If your molecules have no ring in common, tick
+<span class="menu">Use my own core instead of ring scaffolds</span> and draw the common
+part with <span class="menu">Draw Core...</span>. Substituents are then defined around that
+core.</p>
+
+<br>
+<h3><a name="Tree"></a>2. The scaffold tree</h3>
+<p>Every ring system found in the molecules is one entry. A scaffold that is contained in a
+larger one appears as its parent. Each entry shows the number of molecules and, once a
+value column is chosen under <span class="menu">Statistics</span> at the bottom of the
+window, the mean and median of that value and a
+colour from blue (low) to red (high).</p>
+<ul>
+<li><b>Double click</b> a scaffold to select its molecules in the table and in all views.</li>
+<li>Tick <span class="menu">Only molecules with exactly this scaffold</span> to leave out
+molecules of larger scaffolds that merely contain it.</li>
+<li><b>Right click</b> a scaffold for <span class="menu">Edit Scaffold...</span> (adds a scaffold
+of your own, matched as a substructure) and <span class="menu">Re-orient Family</span>
+(draws all molecules of the family in the same orientation).</li>
+<li><span class="menu">Report To MS Word</span> writes the tree with pictures and statistics;
+<span class="menu">Tree As New Table</span> turns it into a document of its own.</li>
+</ul>
+<p>The tree's settings and your own scaffolds are saved with the project.</p>
+
+<br>
+<h3><a name="Swaps"></a>3. Which exchange matters</h3>
+<p>The <span class="keyword">Substituent Swaps</span> document has one row per exchange of
+one substituent by another, counted over all scaffolds: how many pairs of molecules show
+it, the mean and median change of the value, the fold change, and how often the value
+went up or down. Sort it by <i>Pairs With Values</i> to see the best supported exchanges
+first. Selecting a row selects the molecules behind it in the original table.</p>
+<p><span class="menu">SAR -> Analyse Substituent Pairs...</span> lists the individual pairs.
+Its second mode, <i>same substituents, different scaffold</i>, lists scaffold hops.</p>
+
+<br>
+<h3><a name="Grid"></a>4. The R-group grid</h3>
+<p><span class="menu">SAR -> Create R-Group Grid...</span> lays out one scaffold's molecules
+with one substituent position as rows and another as columns. Every cell shows the
+combined value (median, mean, minimum, maximum or count) and the number of molecules;
+combinations nobody made are marked <i>Empty</i>. Click a cell to select its molecules.
+The grid can be saved as a picture or turned into a table.</p>
+
+<br>
+<h3><a name="Table"></a>5. In the table and the views</h3>
+<ul>
+<li><b>Lock columns:</b> right click a column header and choose
+<span class="menu">Lock Columns Up To '...'</span>. These columns stay in view while you
+scroll to the right. <span class="menu">Unlock Columns</span> ends it.</li>
+<li><b>Let one view filter another:</b> right click a 2D or 3D view and choose
+<span class="menu">Show Only Rows Selected In Other Views</span>. Whatever you select
+elsewhere, for instance with a lasso in a second plot, decides what this view shows.</li>
+<li><b>Table to Word:</b> <span class="menu">SAR -> Export Visible Table to MS Word...</span>
+writes the visible rows and columns with structure pictures.</li>
+</ul>
+<p>Locked columns and the view restriction are saved with the project.</p>
+
+<br>
+<h3><a name="Macros"></a>6. Repeating an analysis</h3>
+<p>All steps of the SAR menu can be recorded and replayed as macros, see
+<a href="help/macros.html">Using Macros</a>. Their task names are <i>SAR Overview</i>,
+<i>Build Scaffold Tree</i>, <i>Create R-Group Table</i>, <i>Create R-Group Grid</i>,
+<i>Analyse Substituent Pairs</i>, <i>Summarise Substituent Swaps</i>,
+<i>Export Visible Table To MS Word</i> and <i>Open SAR Example</i>.</p>
+
+<br>
+<h3><a name="Limits"></a>What to keep in mind</h3>
+<ul>
+<li>Scaffolds are ring systems with their linkers after removing all side chains; stereo
+information is not part of a scaffold.</li>
+<li>Substituent swaps compare molecules that share a scaffold and differ at one position
+only. A mean change over few pairs is weak evidence; look at the pair count.</li>
+<li>Derived documents (swaps, pairs, R-group tables, grids) are snapshots. They stay linked
+to the original table until either window is closed; later changes of the data need a new
+run.</li>
+</ul>
+
+<br>
+</body>
+</html>

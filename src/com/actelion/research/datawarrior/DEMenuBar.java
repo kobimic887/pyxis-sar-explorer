@@ -1217,6 +1217,9 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		addPyxisItem(menu, "Select Diverse Set...", () -> jMenuChemSelectDiverse.doClick());
 		menu.addSeparator();
 		addPyxisItem(menu, "Export Visible Table to MS Word...", () -> new com.actelion.research.datawarrior.pyxis.DETaskExportWord(mParentFrame).defineAndRun());
+		menu.addSeparator();
+		addPyxisItem(menu, "Open Example Project", () -> new com.actelion.research.datawarrior.pyxis.DETaskOpenSARExample(mParentFrame, mApplication).defineAndRun());
+		addPyxisItem(menu, "SAR Quick Start...", () -> FXHelpFrame.showResource("/html/help/pyxis-sar.html", getParentFrame()));
 		return menu;
 		}
 
@@ -1481,6 +1484,9 @@ public class DEMenuBar extends JMenuBar implements ActionListener,
 		jMenuHelp.setText("Help");
 		jMenuHelp.setMnemonic(KeyEvent.VK_H);
 		jMenuHelp.add(jMenuHelpHelp);
+		JMenuItem pyxisQuickStart = new JMenuItem("SAR Quick Start...");
+		pyxisQuickStart.addActionListener(e -> FXHelpFrame.showResource("/html/help/pyxis-sar.html", getParentFrame()));
+		jMenuHelp.add(pyxisQuickStart);
 		jMenuHelp.add(jMenuHelpShortcuts);
 
 		jMenuHelp.addSeparator();

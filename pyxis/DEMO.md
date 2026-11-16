@@ -4,6 +4,12 @@ A walk through the SAR menu with the two SD-files that came with the SARvision t
 text. The numbers below were measured with this program on those files; they describe
 those files, not any other program's results.
 
+**No files at hand?** **SAR → Open Example Project** opens 288 COX-2 inhibitors from ChEMBL
+(celecoxib is the first row). Then **SAR → SAR Overview...** with the value
+`COX-2 IC50 (nM)` gives 55 scaffolds in the tree, seven R columns and 1,677 substituent
+swaps, and sections 2 to 5 below work the same way on it. **SAR → SAR Quick Start...**
+shows the same steps inside the program.
+
 Before you start: install the program, start it once, and have `Chembl_612285and6.sdf` and
 `Amino Acids.sdf` at hand. The installers are not code-signed, so Windows and macOS ask
 for confirmation on the first start (see *Installers* in the README).
@@ -68,5 +74,6 @@ and the core leads the scaffold tree as a user-defined scaffold with 303 molecul
 - This is a modified version of DataWarrior with Pyxis additions; it is not SARvision
   and has not been compared with SARvision's results.
 - CDD Vault import exists but has only been tested against a simulated server.
-- Locked columns, the live view filter and links between derived tables and their
-  source last for the session; they are not stored in the project file.
+- Links between derived tables (swaps, pairs, R-group tables) and their source last for
+  the session; they are not stored in the project file. Locked columns and the live view
+  filter are.

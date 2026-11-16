@@ -61,6 +61,11 @@ fileName={pairs.as_posix()}
 <task name="waitSomeSeconds">
 seconds=3
 </task>
+<task name="openSARExample">
+</task>
+<task name="waitSomeSeconds">
+seconds=3
+</task>
 <task name="exitProgram">
 saveChanges=no
 </task>
@@ -110,6 +115,9 @@ if 'Pyxis SAR overview finished: ring scaffolds, value' not in log_text:
     raise RuntimeError('No evidence that the sAROverview macro task ran to its end')
 if not re.search(r'Pyxis R-group grid displayed: [1-9][0-9]* x [1-9][0-9]*', log_text):
     raise RuntimeError('No evidence that the createRGroupGrid macro task displayed a grid')
+# The example project travels inside the program; this line is printed after it was copied out.
+if not re.search(r'Pyxis SAR example opened: [1-9][0-9]{3,} bytes', log_text):
+    raise RuntimeError('No evidence that the bundled example project is part of the packaged program')
 with pairs.open(encoding='utf-8-sig', newline='') as stream:
     reader = csv.DictReader(stream)
     # DataWarrior annotates chemical columns with their exported encoding.
@@ -120,7 +128,7 @@ with pairs.open(encoding='utf-8-sig', newline='') as stream:
     rows = list(reader)
     if not rows or not all(row['Position'] and row['Scaffold'] for row in rows):
         raise RuntimeError('Substituent-pair export has no valid data rows')
-print(f'PASS: packaged SAR Overview built the scaffold tree, R-group grid displayed; Analyse Substituent Pairs exported {len(rows)} pairs')
+print(f'PASS: packaged SAR Overview built the scaffold tree, R-group grid displayed; Analyse Substituent Pairs exported {len(rows)} pairs; bundled example opened')
 
 if args.document:
     print('PASS: .dwar launch argument loaded document and executed its embedded macro')

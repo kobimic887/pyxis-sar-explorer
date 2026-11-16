@@ -38,8 +38,8 @@ import java.util.WeakHashMap;
  * Only pressing and dragging in that view counts; a pointer that merely rests over it
  * while the selection is changed elsewhere does not.
  *
- * After saving and reopening, a view stays restricted to the saved list, but the list no
- * longer follows the selection until the option is switched on again.
+ * The setting is saved with the project: after reopening, the view shows the rows it
+ * showed when saved and follows the selection again.
  */
 public class LiveSelectionFilter implements ListSelectionListener {
 	public static final String LIST_NAME = "Live Selection";
@@ -85,6 +85,29 @@ public class LiveSelectionFilter implements ListSelectionListener {
 			}
 		}
 
+	/**
+	 * Takes up following the selection for a view of a reopened project. The view is already
+	 * restricted to the saved list; that list is adopted as it is, so the view shows what it
+	 * showed when the project was saved until the selection changes.
+	 */
+	public static void resume(JVisualization view, ListSelectionModel selectionModel) {
+		CompoundTableModel tableModel = view.getTableModel();
+		int list = view.getLocalExclusionList();
+		if (list == CompoundTableListHandler.LISTINDEX_NONE)
+			return;
+		LiveSelectionFilter filter = sFilterMap.get(tableModel);
+		if (filter == null) {
+			filter = new LiveSelectionFilter(tableModel, selectionModel);
+			filter.mListName = tableModel.getListHandler().getListName(list);
+			sFilterMap.put(tableModel, filter);
+			selectionModel.addListSelectionListener(filter);
+			}
+		else if (filter.getListIndex() != list) {
+			return;	// restricted to some other list; leave it as the file says
+			}
+		filter.track(view);
+		}
+
 	private boolean contains(JVisualization view) {
 		for (WeakReference<JVisualization> reference:mViews)
 			if (reference.get() == view)
@@ -101,6 +124,12 @@ public class LiveSelectionFilter implements ListSelectionListener {
 		CompoundTableListHandler listHandler = mTableModel.getListHandler();
 		if (getListIndex() == CompoundTableListHandler.LISTINDEX_NONE)
 			mListName = listHandler.createList(LIST_NAME);
+		track(view);
+		copySelectionToList();
+		view.setLocalExclusionList(getListIndex());
+		}
+
+	private void track(JVisualization view) {
 		if (!contains(view)) {
 			mViews.add(new WeakReference<>(view));
 			java.awt.event.MouseAdapter tracker = new java.awt.event.MouseAdapter() {
@@ -117,8 +146,6 @@ public class LiveSelectionFilter implements ListSelectionListener {
 			view.addMouseListener(tracker);
 			mMouseTrackers.put(view, tracker);
 			}
-		copySelectionToList();
-		view.setLocalExclusionList(getListIndex());
 		}
 
 	private void remove(JVisualization view) {

@@ -59,3 +59,8 @@ javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/DialogsGuiChec
 java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/dialog-prefs" \
   --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
   -classpath "datawarrior_all.jar:$OUT" DialogsGuiCheck "$OUT/grid.dwam" "${2%.png}-dialog"
+
+javac -nowarn -d "$OUT" -classpath datawarrior_all.jar pyxis/test/ExampleGuiCheck.java
+java -Xmx1500m -DskipUpdates=true -DskipMessages=true -Djava.util.prefs.userRoot="$OUT/example-prefs" \
+  --add-exports java.base/jdk.internal.module=ALL-UNNAMED \
+  -classpath "datawarrior_all.jar:$OUT" ExampleGuiCheck "$PROJECT"

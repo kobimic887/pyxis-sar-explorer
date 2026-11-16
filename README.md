@@ -74,9 +74,9 @@ The same tasks are also in the **Chemistry** menu and can be recorded in macros.
   lasso in one plot decides what a second plot shows. Other views are unaffected. A
   selection made inside the restricted view itself is not followed. It uses a row list
   named *Live Selection*, which is removed when the last view stops using it. Tables and
-  structure views cannot be restricted this way. After saving and reopening, the view
-  stays restricted to the saved list but no longer follows the selection until the option
-  is switched on again. The option is not macro recorded.
+  structure views cannot be restricted this way. The option is saved with the project:
+  after reopening, the view shows the rows it showed when saved and follows the selection
+  again. The option is not macro recorded.
 
 * **Report To MS Word** (button in the scaffold tree window) writes the tree as a Word
   table: one row per scaffold in display order with its picture, hierarchy level, rings,
@@ -86,7 +86,7 @@ The same tasks are also in the **Chemistry** menu and can be recorded in macros.
 * **Lock Columns Up To '...'** (popup menu of a table column header) keeps that column and
   all columns left of it in view while the table is scrolled to the right; **Unlock
   Columns** ends it. Sorting, selecting rows, resizing and the popup menus work on the
-  locked columns as usual. The lock is not saved with the project and is not macro
+  locked columns as usual. The lock is saved with the project; it is not macro
   recorded. Editing a cell of a locked column scrolls the table back to it first.
 
 * **Create R-Group Table...** (`createRGroupTable`) copies all rows with one chosen
@@ -133,9 +133,25 @@ partial equivalents and verification limits.
   Limits: 100 groups per axis, 2,500 cells, 25 million pixels per PNG.
 
 
+* **SAR → Open Example Project** (`openSARExample`) opens a project that ships inside the
+  program, so the SAR menu can be tried without a file: 288 COX-2 inhibitors with their
+  published IC50 values, one row per molecule. The data comes from
+  [ChEMBL](https://www.ebi.ac.uk/chembl) (target CHEMBL230; documents CHEMBL1130002,
+  CHEMBL1130039, CHEMBL1133457 and CHEMBL1133620, J. Med. Chem. 1997 and 2000) and is
+  made available by ChEMBL under the
+  [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) licence; the project's
+  Explanation view says so too. Values are as recorded in ChEMBL and were not curated
+  further. The copy that opens is a temporary file; use *Save As* to keep changes.
+  `pyxis/demo/cox2-chembl.tsv` holds the table and `pyxis/demo/make-example.sh` rebuilds
+  the project from it.
+
+* **SAR → SAR Quick Start...** (also in the Help menu and the manual's contents) is a short
+  chapter on the Pyxis additions inside the program's help.
+
 ### Showing it to someone
-`pyxis/DEMO.md` is a five-minute walk through the SAR menu with the two SD-files that
-came with the training text, including the numbers this program gives for them.
+`pyxis/DEMO.md` is a five-minute walk through the SAR menu, first with the built-in
+example and then with the two SD-files that came with the training text, including the
+numbers this program gives for them.
 
 ### Pictures for a presentation
 `pyxis/demo/make-gallery.sh project.dwar output-directory value-column` runs the workflow

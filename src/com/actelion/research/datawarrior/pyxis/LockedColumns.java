@@ -206,6 +206,8 @@ public class LockedColumns {
 				Rectangle clip = g.getClipBounds();
 				g.setColor(mTarget.getBackground());
 				g.fillRect(0, 0, getWidth(), getHeight());
+				if (mTarget == mTable)
+					paintCellBackgrounds(g, clip);
 
 				Graphics targetGraphics = g.create();
 				targetGraphics.clipRect(0, 0, getWidth(), getHeight());
@@ -219,6 +221,32 @@ public class LockedColumns {
 				}
 			finally {
 				mPainting = false;
+				}
+			}
+
+		/**
+		 * Fills every locked cell with the background its renderer asks for (alternating row
+		 * shading, colours set by the user, selection). Some looks leave that to the table and
+		 * the table skips cells that are scrolled out of sight, which the locked ones are.
+		 */
+		private void paintCellBackgrounds(Graphics g, Rectangle clip) {
+			int count = Math.min(mCount, mTable.getColumnCount());
+			int firstRow = (clip == null) ? 0 : Math.max(0, mTable.rowAtPoint(new java.awt.Point(0, clip.y)));
+			int lastRow = (clip == null) ? -1 : mTable.rowAtPoint(new java.awt.Point(0, clip.y+clip.height-1));
+			if (lastRow == -1)
+				lastRow = mTable.getRowCount()-1;
+			for (int row=firstRow; row<=lastRow; row++) {
+				for (int column=0; column<count; column++) {
+					try {
+						Color background = mTable.prepareRenderer(mTable.getCellRenderer(row, column), row, column).getBackground();
+						if (background != null) {
+							Rectangle cell = mTable.getCellRect(row, column, false);
+							g.setColor(background);
+							g.fillRect(cell.x, cell.y, cell.width, cell.height);
+							}
+						}
+					catch (RuntimeException e) {}	// a renderer that cannot be prepared keeps the plain background
+					}
 				}
 			}
 
